@@ -1,0 +1,346 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    /* 03-seam — capability-seam triptych (Definition / Provider / Consumer) */
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      --seam-cream: #FAF9F5;
+      --seam-tile: #EFE9DE;
+      --seam-tile-strong: #ECE3D4;
+      --seam-ink: #141413;
+      --seam-coral: #CC785C;
+      --seam-font-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      --seam-font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --seam-font-mono: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+    }
+    [class~="03-seam-ground"] {
+      position: absolute;
+      inset: 0;
+      background: var(--seam-cream);
+      background-image: radial-gradient(circle, rgba(20, 20, 19, 0.05) 1.2px, transparent 1.2px);
+      background-size: 64px 64px;
+      background-position: 32px 32px;
+    }
+    [class~="03-seam-stage"] {
+      position: absolute;
+      inset: 0;
+    }
+    [class~="03-seam-camera"] {
+      position: absolute;
+      inset: 0;
+    }
+    [class~="03-seam-kicker"] {
+      position: absolute;
+      left: 80px;
+      top: 84px;
+      font-family: var(--seam-font-mono);
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      color: var(--seam-ink);
+      opacity: 0;
+    }
+    [class~="03-seam-spike"] {
+      display: inline-block;
+      margin-right: 0.35em;
+      font-family: var(--seam-font-body);
+      color: var(--seam-coral);
+    }
+    [class~="03-seam-slot"] {
+      position: absolute;
+      top: 390px;
+      width: 360px;
+      height: 330px;
+      border: 1px dashed rgba(20, 20, 19, 0.18);
+      border-radius: 12px;
+      opacity: 0;
+    }
+    [class~="03-seam-card"] {
+      position: absolute;
+      top: 390px;
+      width: 360px;
+      height: 330px;
+      padding: 26px;
+      background: var(--seam-tile);
+      border: 1px solid rgba(20, 20, 19, 0.12);
+      border-radius: 12px;
+      box-shadow:
+        0 1px 3px rgba(20, 20, 19, 0.08),
+        0 4px 16px rgba(20, 20, 19, 0.04);
+      opacity: 0;
+    }
+    [class~="03-seam-card-index"] {
+      font-family: var(--seam-font-mono);
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: rgba(20, 20, 19, 0.45);
+    }
+    [class~="03-seam-card-term"] {
+      margin-top: 34px;
+      font-family: var(--seam-font-mono);
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: var(--seam-ink);
+      white-space: nowrap;
+    }
+    [class~="03-seam-card-role"] {
+      margin-top: 14px;
+      font-family: var(--seam-font-display);
+      font-size: 3.5cqw;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      color: var(--seam-ink);
+    }
+    [class~="03-seam-card-divider"] {
+      margin-top: 22px;
+      height: 1px;
+      background: rgba(20, 20, 19, 0.12);
+    }
+    [class~="03-seam-card-chip"] {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 6px 12px;
+      background: var(--seam-tile-strong);
+      border-radius: 9999px;
+      font-family: var(--seam-font-mono);
+      font-size: 19px;
+      letter-spacing: 0.02em;
+      color: rgba(20, 20, 19, 0.75);
+    }
+    [class~="03-seam-wires"] {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    [class~="03-seam-wire-label"] {
+      position: absolute;
+      padding: 5px 12px;
+      background: var(--seam-cream);
+      border: 1px solid rgba(20, 20, 19, 0.12);
+      border-radius: 9999px;
+      font-family: var(--seam-font-mono);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--seam-ink);
+      opacity: 0;
+    }
+  </style>
+
+  <div id="root" data-composition-id="03-seam" data-width="1920" data-height="1080" data-duration="11.06">
+    <!-- full-bleed ground: warm cream + faint dot texture -->
+    <div id="03-seam-ground" class="clip 03-seam-ground" data-start="0" data-duration="10.56" data-track-index="0"></div>
+
+    <div id="03-seam-stage" class="clip 03-seam-stage" data-start="0" data-duration="10.56" data-track-index="1">
+      <div class="03-seam-camera" id="03-seam-camera">
+        <!-- Scene 1: coral ✱ kicker (this frame's one coral moment) -->
+        <div class="03-seam-kicker" id="03-seam-kicker"><span class="03-seam-spike" id="03-seam-spike">✱</span>能力缝隙 · CAPABILITY SEAM</div>
+
+        <!-- empty triptych region, established before the cards assemble -->
+        <div class="03-seam-slot" style="left: 340px"></div>
+        <div class="03-seam-slot" style="left: 780px"></div>
+        <div class="03-seam-slot" style="left: 1220px"></div>
+
+        <!-- the three role cards -->
+        <div class="03-seam-card" id="03-seam-card-1" style="left: 340px">
+          <div class="03-seam-card-index">01</div>
+          <div class="03-seam-card-term">Service Definition</div>
+          <div class="03-seam-card-role">声明接口</div>
+          <div class="03-seam-card-divider"></div>
+          <div class="03-seam-card-chip">interface llm</div>
+        </div>
+        <div class="03-seam-card" id="03-seam-card-2" style="left: 780px">
+          <div class="03-seam-card-index">02</div>
+          <div class="03-seam-card-term">Service Provider</div>
+          <div class="03-seam-card-role">实现</div>
+          <div class="03-seam-card-divider"></div>
+          <div class="03-seam-card-chip">implements llm</div>
+        </div>
+        <div class="03-seam-card" id="03-seam-card-3" style="left: 1220px">
+          <div class="03-seam-card-index">03</div>
+          <div class="03-seam-card-term">Consumer</div>
+          <div class="03-seam-card-role">只认接口</div>
+          <div class="03-seam-card-divider"></div>
+          <div class="03-seam-card-chip">ctx.llm</div>
+        </div>
+
+        <!-- wires: solid seam link (Definition↔Provider) + dashed inject arc (Consumer→Definition) -->
+        <svg class="03-seam-wires" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <mask id="03-seam-arc-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1920" height="1080">
+              <path
+                id="03-seam-arc-mask-path"
+                d="M 1400 382 C 1290 130, 650 130, 520 382"
+                fill="none"
+                stroke="#ffffff"
+                stroke-width="60"
+                stroke-linecap="round"
+              />
+            </mask>
+          </defs>
+          <line
+            id="03-seam-link-glow"
+            x1="700"
+            y1="555"
+            x2="780"
+            y2="555"
+            stroke="#141413"
+            stroke-width="14"
+            stroke-linecap="round"
+            opacity="0"
+          />
+          <g mask="url(#03-seam-arc-mask)">
+            <path
+              id="03-seam-arc-glow"
+              d="M 1400 382 C 1290 130, 650 130, 520 382"
+              fill="none"
+              stroke="#141413"
+              stroke-width="14"
+              stroke-linecap="round"
+              opacity="0.16"
+            />
+            <path
+              id="03-seam-arc"
+              d="M 1400 382 C 1290 130, 650 130, 520 382"
+              fill="none"
+              stroke="#141413"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-dasharray="9 8"
+              opacity="0.9"
+            />
+            <polygon id="03-seam-arc-head" points="520,382 523.4,356.8 538.6,364.6" fill="#141413" />
+          </g>
+          <line
+            id="03-seam-link"
+            x1="700"
+            y1="555"
+            x2="780"
+            y2="555"
+            stroke="#141413"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+          <circle class="03-seam-port" cx="700" cy="555" r="6" fill="#141413" />
+          <circle class="03-seam-port" cx="780" cy="555" r="6" fill="#141413" />
+        </svg>
+
+        <!-- seam instance annotations -->
+        <div class="03-seam-wire-label" id="03-seam-link-label" style="left: 708px; top: 505px">llm</div>
+        <div class="03-seam-wire-label" id="03-seam-inject-label" style="left: 908px; top: 145px">inject</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      var camera = document.getElementById("03-seam-camera");
+      var kicker = document.getElementById("03-seam-kicker");
+      var spike = document.getElementById("03-seam-spike");
+      var slots = Array.prototype.slice.call(document.querySelectorAll('[class~="03-seam-slot"]'));
+      var card1 = document.getElementById("03-seam-card-1");
+      var card2 = document.getElementById("03-seam-card-2");
+      var card3 = document.getElementById("03-seam-card-3");
+      var link = document.getElementById("03-seam-link");
+      var linkGlow = document.getElementById("03-seam-link-glow");
+      var linkLabel = document.getElementById("03-seam-link-label");
+      var ports = Array.prototype.slice.call(document.querySelectorAll('[class~="03-seam-port"]'));
+      var arc = document.getElementById("03-seam-arc");
+      var arcMaskPath = document.getElementById("03-seam-arc-mask-path");
+      var arcGlow = document.getElementById("03-seam-arc-glow");
+      var injectLabel = document.getElementById("03-seam-inject-label");
+
+      // macro camera — one slow push-in under the whole shot
+      tl.fromTo(
+        camera,
+        { scale: 1 },
+        { scale: 1.018, transformOrigin: "50% 46%", duration: 10.56, ease: "none" },
+        0,
+      );
+
+      // Scene 1 (0.0–2.48s) — VO「模型从一条能力缝隙接入」: coral ✱ kicker lands; the empty triptych region establishes
+      tl.fromTo(kicker, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.15);
+      tl.fromTo(
+        spike,
+        { opacity: 0, scale: 0.92 },
+        { opacity: 1, scale: 1, transformOrigin: "50% 50%", duration: 0.5, ease: "power2.out" },
+        0.3,
+      );
+      slots.forEach(function (el, i) {
+        tl.fromTo(el, { opacity: 0 }, { opacity: 0.55, duration: 0.7, ease: "power1.out" }, 0.4 + i * 0.08);
+      });
+
+      // Scene 2 (2.48–5.36s) — VO「Definition 声明接口」: the Definition card pops on its naming beat
+      tl.fromTo(
+        card1,
+        { scale: 0, opacity: 0, y: 24 },
+        { scale: 1, opacity: 1, y: 0, transformOrigin: "50% 50%", duration: 0.6, ease: "power3.out" },
+        2.48,
+      );
+
+      // Scene 3 (5.36–7.46s) — VO「Provider 实现它」: Provider pops; ports + the interface link draw between the pair
+      tl.fromTo(
+        card2,
+        { scale: 0, opacity: 0, y: 24 },
+        { scale: 1, opacity: 1, y: 0, transformOrigin: "50% 50%", duration: 0.6, ease: "power3.out" },
+        5.36,
+      );
+      ports.forEach(function (el, i) {
+        tl.fromTo(
+          el,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, transformOrigin: "50% 50%", duration: 0.4, ease: "power3.out" },
+          6.02 + i * 0.07,
+        );
+      });
+      var linkLen = link.getTotalLength();
+      link.style.strokeDasharray = String(linkLen);
+      link.style.strokeDashoffset = String(linkLen);
+      tl.to(link, { strokeDashoffset: 0, duration: 0.6, ease: "power2.out" }, 6.1);
+      tl.fromTo(linkGlow, { opacity: 0 }, { opacity: 0.2, duration: 0.8, ease: "power1.out" }, 6.2);
+      tl.fromTo(linkLabel, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power1.out" }, 6.8);
+
+      // Scene 4 (7.46–9.76s) — VO「Consumer 只认接口」: Consumer arrives; the dashed inject arc draws back to Definition
+      tl.fromTo(
+        card3,
+        { scale: 0, opacity: 0, y: 24 },
+        { scale: 1, opacity: 1, y: 0, transformOrigin: "50% 50%", duration: 0.6, ease: "power3.out" },
+        7.46,
+      );
+      var arcLen = arc.getTotalLength();
+      arcMaskPath.style.strokeDasharray = String(arcLen);
+      arcMaskPath.style.strokeDashoffset = String(arcLen);
+      tl.to(arcMaskPath, { strokeDashoffset: 0, duration: 1.15, ease: "power2.out" }, 8.2);
+      tl.fromTo(injectLabel, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power1.out" }, 9.35);
+
+      // Tail hold (9.76–10.56s): cards hold still; the wires' glow swells once and settles (bounded half-breath)
+      var breathe = { p: 0 };
+      tl.to(
+        breathe,
+        {
+          p: Math.PI,
+          duration: 0.8,
+          ease: "none",
+          onUpdate: function () {
+            var s = Math.sin(breathe.p);
+            linkGlow.style.opacity = (0.2 + s * 0.05).toFixed(3);
+            arcGlow.style.opacity = (0.16 + s * 0.04).toFixed(3);
+          },
+        },
+        9.76,
+      );
+
+      window.__timelines["03-seam"] = tl;
+    })();
+  </script>
+</template>

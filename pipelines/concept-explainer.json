@@ -1,0 +1,75 @@
+{
+  "id": "concept-explainer",
+  "name": "概念讲解（60–90s，1080p）",
+  "stages": [
+    {
+      "id": "ingest",
+      "type": "model",
+      "prompt": "ingest",
+      "outputs": ["materials/NOTES.md"],
+      "gate": "auto"
+    },
+    {
+      "id": "brief",
+      "type": "model",
+      "prompt": "brief",
+      "inputs": ["materials/NOTES.md"],
+      "outputs": ["BRIEF.md"],
+      "gate": "required"
+    },
+    {
+      "id": "script",
+      "type": "model",
+      "prompt": "script",
+      "inputs": ["BRIEF.md"],
+      "outputs": ["SCRIPT.md"],
+      "gate": "required"
+    },
+    {
+      "id": "tts",
+      "type": "tool",
+      "impl": "tools/tts",
+      "inputs": ["SCRIPT.md"],
+      "outputs": ["audio/", "audio_meta.json"],
+      "gate": "auto"
+    },
+    {
+      "id": "storyboard",
+      "type": "model",
+      "prompt": "storyboard",
+      "inputs": ["BRIEF.md", "SCRIPT.md", "audio_meta.json", "frame.md"],
+      "outputs": ["STORYBOARD.md"],
+      "gate": "required"
+    },
+    {
+      "id": "frames",
+      "type": "model",
+      "prompt": "frames",
+      "inputs": ["STORYBOARD.md", "frame.md", "audio_meta.json"],
+      "outputs": ["compositions/frames/*"],
+      "gate": "auto",
+      "timeoutMs": 3600000,
+      "heal": { "check": "npm run check", "maxAttempts": 3 }
+    },
+    {
+      "id": "assemble",
+      "type": "tool",
+      "impl": "tools/assemble",
+      "outputs": ["index.html", "compositions/captions.html", "caption_groups.json"],
+      "gate": "auto"
+    },
+    {
+      "id": "render",
+      "type": "tool",
+      "impl": "tools/render",
+      "outputs": ["renders/video.mp4"],
+      "gate": "auto"
+    },
+    {
+      "id": "final",
+      "type": "review",
+      "inputs": ["renders/video.mp4"],
+      "gate": "required"
+    }
+  ]
+}

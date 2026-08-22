@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Studio · 教学视频生产平台</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">✱</span>
+    <span class="brand-name">Video Studio</span>
+    <span class="brand-sub">教学视频生产平台</span>
+  </div>
+  <div class="topbar-right">
+    <span id="mock-badge" class="mock-badge mono" hidden>MOCK</span>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="side">
+    <button class="btn btn-primary new-btn" data-action="open-new">＋ 新建任务</button>
+    <div class="side-label mono">任务 · 血缘树</div>
+    <div id="task-tree" class="task-tree"></div>
+  </aside>
+  <main id="detail" class="detail"></main>
+</div>
+
+<div id="toasts" class="toasts"></div>
+
+<div class="modal-veil" id="new-modal" hidden>
+  <form class="modal" id="new-form" autocomplete="off">
+    <h2 class="modal-title">新建任务</h2>
+    <p class="modal-sub">从一个想法开始，跑通 ingest → final 整条生产线。</p>
+    <label class="field">
+      <span class="field-label mono">标题</span>
+      <input name="title" type="text" required placeholder="例如：第三课 · 接入任意模型">
+    </label>
+    <label class="field">
+      <span class="field-label mono">Pipeline</span>
+      <select name="pipeline" required></select>
+    </label>
+    <label class="field">
+      <span class="field-label mono">想法 / 材料</span>
+      <textarea name="text" rows="6" placeholder="口述想法、素材笔记、必须覆盖的要点…"></textarea>
+    </label>
+    <label class="field">
+      <span class="field-label mono">参考链接</span>
+      <textarea name="urls" rows="2" placeholder="每行一个 URL，可留空"></textarea>
+    </label>
+    <div class="row-actions modal-actions">
+      <button type="submit" class="btn btn-primary">创建并启动</button>
+      <button type="button" class="btn btn-ghost" data-action="close-new">取消</button>
+    </div>
+  </form>
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

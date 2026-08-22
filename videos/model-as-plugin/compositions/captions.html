@@ -1,0 +1,221 @@
+<template id="captions-template" data-composition-id="captions" data-width="1920" data-height="1080">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+
+<style data-brand-tokens>
+      :root {
+      --ink: #141413;
+      --cream: #FAF9F5;
+      --tile: #EFE9DE;
+      --tile-strong: #ECE3D4;
+      --coral: #CC785C;
+      --navy: #181715;
+      --navy-soft: #1F1E1B;
+      --navy-elev: #252320;
+      --cap-ink: #141413;
+      --cap-canvas: #FAF9F5;
+      --cap-accent: #CC785C;
+      --cap-accent-2: #ECE3D4;
+      --font-display: "EB Garamond", system-ui, serif;
+      --font-body: "Inter", system-ui, sans-serif;
+      --cap-band-top: 900px;
+      --cap-band-height: 180px;
+      }
+    </style>
+
+<style>
+  #captions-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .caption-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+  }
+  /* the keep-out band, from captionBand(H) — frame content stays above it */
+  .caption-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--cap-band-top, 900px);
+    height: var(--cap-band-height, 180px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .caption-group {
+    /* every group is absolutely stacked over the SAME band — exactly one shown at a
+       time via opacity. Must be absolute: in-flow groups would lay out side-by-side. */
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+  }
+
+  /* THE lifted cream card — warm cream fill, 1px hairline ink border, one soft warm
+     shadow (code-editorial's only elevation language), 12px radius, no tilt */
+  .caption-pill {
+    max-width: 78%;
+    padding: 22px 44px 26px;
+    background: var(--cap-canvas, #faf9f5);
+    border: 1px solid color-mix(in srgb, var(--cap-ink, #141413) 12%, transparent);
+    border-radius: 12px;
+    box-shadow:
+      0 1px 3px color-mix(in srgb, var(--cap-ink, #141413) 8%, transparent),
+      0 4px 16px color-mix(in srgb, var(--cap-ink, #141413) 4%, transparent);
+  }
+  .caption-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.12em 0.3em;
+    font-family: "EB Garamond", Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(40px, 4.4vw, 56px);
+    line-height: 1.24;
+    letter-spacing: -0.02em;
+  }
+
+  /* upcoming — faint warm ink, no underline */
+  .caption-word {
+    display: inline-block;
+    padding: 0 0.02em 0.06em;
+    color: color-mix(in srgb, var(--cap-ink, #141413) 40%, var(--cap-canvas, #faf9f5));
+    border-bottom: 3px solid transparent;
+  }
+  /* current word — full ink under the coral voltage underline (the brand's signature
+     inline-link gesture; border-bottom = underline without layout shift) */
+  .caption-word.is-active {
+    color: var(--cap-ink, #141413);
+    border-bottom: 3px solid var(--cap-accent, #cc785c);
+  }
+  /* already spoken — solid warm ink, underline cleared */
+  .caption-word.is-spoken {
+    color: var(--cap-ink, #141413);
+    border-bottom: 3px solid transparent;
+  }
+
+  /* optional per-word accents (dormant until a word-classer tags them) */
+  /* brand / key term — the expressive EB Garamond italic */
+  .caption-word.cap-brand {
+    font-style: italic;
+    color: var(--cap-ink, #141413);
+  }
+  .caption-word.cap-brand.is-active {
+    border-bottom: 3px solid var(--cap-accent, #cc785c);
+  }
+  /* numerals / data — slightly recessed warm ink */
+  .caption-word.cap-num {
+    color: color-mix(in srgb, var(--cap-ink, #141413) 72%, var(--cap-canvas, #faf9f5));
+  }
+  /* emphasis — a persistent coral voltage underline */
+  .caption-word.cap-cta {
+    border-bottom: 3px solid var(--cap-accent-2, #b5654a);
+    color: var(--cap-ink, #141413);
+  }
+
+  @media (max-aspect-ratio: 9/16) {
+    .caption-pill {
+      max-width: 92%;
+    }
+    .caption-line {
+      font-size: clamp(34px, 5.4vw, 46px);
+    }
+  }
+</style>
+
+<div
+  id="captions-root"
+  data-composition-id="captions"
+  data-timeline-locked
+  data-start="0"
+  data-duration="68.64"
+  data-fps="30"
+  data-width="1920"
+  data-height="1080"
+>
+  <div class="caption-layer" aria-hidden="true">
+    <div id="caption-stage" class="caption-stage"></div>
+  </div>
+</div>
+
+<script>
+  // captions.mjs injects the engine's scene-aware groups + real duration here.
+  var GROUPS = [{"id":"caption-group-0","frame":1,"start":0,"end":2.977,"text":"GPT、Kimi、Claude——","words":[{"id":"caption-word-0-0","text":"GPT、Kimi、Claude——","start":0,"end":2.977}]},{"id":"caption-group-1","frame":1,"start":2.977,"end":6.6,"text":"在这套框架里， 它们都不是核心， 只是插件。","words":[{"id":"caption-word-1-0","text":"在这套框架里，","start":2.977,"end":4.203},{"id":"caption-word-1-1","text":"它们都不是核心，","start":4.203,"end":5.604},{"id":"caption-word-1-2","text":"只是插件。","start":5.604,"end":6.48}]},{"id":"caption-group-2","frame":2,"start":7.28,"end":13.35,"text":"DeepSeek Harness， 一切皆插件： 工具、会话、loop 是插件——","words":[{"id":"caption-word-2-0","text":"DeepSeek Harness，","start":7.28,"end":9.926},{"id":"caption-word-2-1","text":"一切皆插件：","start":9.926,"end":10.86},{"id":"caption-word-2-2","text":"工具、会话、loop 是插件——","start":10.86,"end":13.35}]},{"id":"caption-group-3","frame":2,"start":13.35,"end":15.96,"text":"模型适配器， 也只是树上一片叶子。","words":[{"id":"caption-word-3-0","text":"模型适配器，","start":13.35,"end":14.284},{"id":"caption-word-3-1","text":"也只是树上一片叶子。","start":14.284,"end":15.84}]},{"id":"caption-group-4","frame":3,"start":16.64,"end":26.52,"text":"模型从一条「能力缝隙」接入： Definition 声明接口， Provider 实现它， Consumer 只认接口。","words":[{"id":"caption-word-4-0","text":"模型从一条「能力缝隙」接入：","start":16.64,"end":19.037},{"id":"caption-word-4-1","text":"Definition 声明接口，","start":19.037,"end":21.777},{"id":"caption-word-4-2","text":"Provider 实现它，","start":21.777,"end":24.003},{"id":"caption-word-4-3","text":"Consumer 只认接口。","start":24.003,"end":26.4}]},{"id":"caption-group-5","frame":4,"start":27.2,"end":32.4,"text":"换掉模型， 只是换掉 Provider 这片插件——","words":[{"id":"caption-word-5-0","text":"换掉模型，","start":27.2,"end":28.24},{"id":"caption-word-5-1","text":"只是换掉 Provider 这片插件——","start":28.24,"end":32.4}]},{"id":"caption-group-6","frame":4,"start":32.4,"end":35.64,"text":"接口不动， 消费者一行代码不改。","words":[{"id":"caption-word-6-0","text":"接口不动，","start":32.4,"end":33.44},{"id":"caption-word-6-1","text":"消费者一行代码不改。","start":33.44,"end":35.52}]},{"id":"caption-group-7","frame":5,"start":36.32,"end":46.281,"text":"想接任何 OpenAI 兼容端点？ 一段 patch： 改个 baseURL， 挂上你的凭据，","words":[{"id":"caption-word-7-0","text":"想接任何 OpenAI 兼容端点？","start":36.32,"end":40.169},{"id":"caption-word-7-1","text":"一段 patch：","start":40.169,"end":42.206},{"id":"caption-word-7-2","text":"改个 baseURL，","start":42.206,"end":44.696},{"id":"caption-word-7-3","text":"挂上你的凭据，","start":44.696,"end":46.281}]},{"id":"caption-group-8","frame":5,"start":46.281,"end":47.08,"text":"完成。","words":[{"id":"caption-word-8-0","text":"完成。","start":46.281,"end":46.96}]},{"id":"caption-group-9","frame":6,"start":47.76,"end":55.562,"text":"这意味着： 不被任何厂商锁定， 多模型随场景切换， 下一个新模型来了，","words":[{"id":"caption-word-9-0","text":"这意味着：","start":47.76,"end":48.979},{"id":"caption-word-9-1","text":"不被任何厂商锁定，","start":48.979,"end":51.173},{"id":"caption-word-9-2","text":"多模型随场景切换，","start":51.173,"end":53.368},{"id":"caption-word-9-3","text":"下一个新模型来了，","start":53.368,"end":55.562}]},{"id":"caption-group-10","frame":6,"start":55.562,"end":58.12,"text":"写个适配器就接进来。","words":[{"id":"caption-word-10-0","text":"写个适配器就接进来。","start":55.562,"end":58}]},{"id":"caption-group-11","frame":7,"start":58.8,"end":67.96,"text":"想亲手做到？ 实战课程第三课带你接入， 第九课带你造一个。 评论区见。","words":[{"id":"caption-word-11-0","text":"想亲手做到？","start":58.8,"end":60.495},{"id":"caption-word-11-1","text":"实战课程第三课带你接入，","start":60.495,"end":63.885},{"id":"caption-word-11-2","text":"第九课带你造一个。","start":63.885,"end":66.427},{"id":"caption-word-11-3","text":"评论区见。","start":66.427,"end":67.84}]}];
+  var DURATION = 68.64;
+
+  (function () {
+    var stage = document.getElementById("caption-stage");
+
+    // build DOM: one .caption-group per group, .caption-word per word
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.createElement("div");
+      groupEl.className = "caption-group";
+      groupEl.id = "caption-group-" + g;
+      var pill = document.createElement("div");
+      pill.className = "caption-pill";
+      var line = document.createElement("div");
+      line.className = "caption-line";
+      (group.words || []).forEach(function (w, i) {
+        var span = document.createElement("span");
+        span.className = "caption-word";
+        span.id = "caption-word-" + g + "-" + i;
+        span.textContent = String(w.text);
+        line.appendChild(span);
+      });
+      pill.appendChild(line);
+      groupEl.appendChild(pill);
+      stage.appendChild(groupEl);
+    });
+
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.getElementById("caption-group-" + g);
+      var words = group.words || [];
+      var next = GROUPS[g + 1];
+      var isLast = g === GROUPS.length - 1;
+      var start = Math.max(0, Number(group.start));
+      var end = isLast ? DURATION : Math.min(Number(next.start), Number(group.end) + 0.3);
+      if (end <= start) end = start + 0.01;
+
+      // group on/off — exactly one group visible at a time
+      tl.set(groupEl, { opacity: 1 }, start);
+      tl.set(groupEl, { opacity: 0 }, end);
+
+      // 3-state karaoke via className SETS — seek-safe (gsap.set applies on the
+      // engine's frame-by-frame seek; .call callbacks would NOT fire).
+      words.forEach(function (w, i) {
+        var el = document.getElementById("caption-word-" + g + "-" + i);
+        var at = Math.max(start, Number(w.start));
+        tl.set(el, { className: "caption-word" }, start); // upcoming (also resets on reverse-seek)
+        tl.set(el, { className: "caption-word is-active" }, at); // current
+        tl.fromTo(el, { scale: 0.98 }, { scale: 1, duration: 0.16, ease: "power1.out" }, at);
+        if (i + 1 < words.length) {
+          var nextAt = Math.max(start, Number(words[i + 1].start));
+          tl.set(el, { className: "caption-word is-spoken" }, nextAt); // demote when next activates
+        }
+      });
+      if (words.length) {
+        var lastEl = document.getElementById("caption-word-" + g + "-" + (words.length - 1));
+        var lastSpoken = Math.min(end, Number(words[words.length - 1].end) + 0.1);
+        tl.set(lastEl, { className: "caption-word is-spoken" }, lastSpoken);
+      }
+    });
+
+    // full-span anchor so the sub-comp timeline spans the whole video
+    tl.to({}, { duration: DURATION }, 0);
+    window.__timelines["captions"] = tl;
+  })();
+</script>
+
+<style>
+  .caption-line { line-height: 1.1 !important; }
+</style>
+</template>

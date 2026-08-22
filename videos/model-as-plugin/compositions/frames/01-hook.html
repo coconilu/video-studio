@@ -1,0 +1,182 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    /* CJK stacks are OS-bundled; local() declarations satisfy the offline renderer */
+    @font-face { font-family: "Noto Serif SC"; src: local("Noto Serif SC"); }
+    @font-face { font-family: "Songti SC"; src: local("Songti SC"); }
+    @font-face { font-family: "SimSun"; src: local("SimSun"); }
+    @font-face { font-family: "Noto Sans Mono CJK"; src: local("Noto Sans Mono CJK"); }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      background: transparent;
+    }
+
+    /* full-bleed ground: warm cream + 极淡发丝网格 (background role, dim ~35%) */
+    #hook-bg {
+      position: absolute;
+      inset: 0;
+      background-color: #faf9f5;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(20, 20, 19, 0.05) 0, rgba(20, 20, 19, 0.05) 1px, transparent 1px, transparent 120px),
+        repeating-linear-gradient(90deg, rgba(20, 20, 19, 0.05) 0, rgba(20, 20, 19, 0.05) 1px, transparent 1px, transparent 120px);
+    }
+
+    #hook-stage {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+
+    /* coral ✱ spike — the frame's single coral moment */
+    #hook-spike {
+      position: absolute;
+      left: 50%;
+      top: 12.5%;
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 3.2cqw;
+      line-height: 1;
+      color: #cc785c;
+      will-change: transform, opacity;
+    }
+
+    /* the three model names — mono display, escalating size per beat */
+    .hook-name {
+      position: absolute;
+      left: 50%;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: #141413;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+    #hook-gpt {
+      top: 24%;
+      font-size: 7.2cqw;
+    }
+    #hook-kimi {
+      top: 42.5%;
+      font-size: 8.4cqw;
+    }
+    #hook-claude {
+      top: 61%;
+      font-size: 9.6cqw;
+    }
+
+    /* payoff declaration — serif display, per-word reveal */
+    #hook-statement {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 37%;
+      text-align: center;
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-weight: 400;
+      font-size: 5.5cqw;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      color: #141413;
+      white-space: nowrap;
+    }
+    .hook-w {
+      display: inline-block;
+      will-change: transform, opacity, filter;
+    }
+
+    /* hairline section rule drawing on beneath the declaration */
+    #hook-rule {
+      position: absolute;
+      left: 50%;
+      top: 55.5%;
+      width: 30cqw;
+      margin-left: -15cqw;
+      height: 1px;
+      background: rgba(20, 20, 19, 0.2);
+      will-change: transform;
+    }
+  </style>
+
+  <div id="root" data-composition-id="01-hook" data-start="0" data-duration="7.78" data-width="1920" data-height="1080">
+    <div class="clip" id="hook-bg" data-start="0" data-duration="7.8" data-track-index="0"></div>
+    <div class="clip" id="hook-stage" data-start="0" data-duration="7.8" data-track-index="1">
+      <div id="hook-spike">✱</div>
+      <div class="hook-name" id="hook-gpt">GPT</div>
+      <div class="hook-name" id="hook-kimi">Kimi</div>
+      <div class="hook-name" id="hook-claude">Claude</div>
+      <div id="hook-statement">
+        <span class="hook-w">它们</span><span class="hook-w">都不是</span><span class="hook-w">核心，</span><span class="hook-w">只是</span><span class="hook-w">插件</span>
+      </div>
+      <div id="hook-rule"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      // macro push-in running underneath the whole shot (camera modifier)
+      tl.fromTo("#hook-stage", { scale: 1 }, { scale: 1.03, duration: 6.8, ease: "none" }, 0);
+
+      // Scene 1 (0.0–2.0s): three mono names spring-pop onto the central axis, one per beat;
+      // the coral ✱ lands once with the first beat.
+      tl.fromTo(
+        "#hook-spike",
+        { opacity: 0, scale: 0.92, xPercent: -50, yPercent: -50 },
+        { opacity: 1, scale: 1, xPercent: -50, yPercent: -50, duration: 0.4, ease: "power2.out" },
+        0.2
+      );
+      tl.fromTo(
+        "#hook-gpt",
+        { scale: 0, opacity: 0, y: 24, xPercent: -50, yPercent: -50 },
+        { scale: 1, opacity: 1, y: 0, xPercent: -50, yPercent: -50, duration: 0.55, ease: "power3.out" },
+        0.25
+      );
+      tl.fromTo(
+        "#hook-kimi",
+        { scale: 0, opacity: 0, y: 24, xPercent: -50, yPercent: -50 },
+        { scale: 1, opacity: 1, y: 0, xPercent: -50, yPercent: -50, duration: 0.55, ease: "power3.out" },
+        0.85
+      );
+      tl.fromTo(
+        "#hook-claude",
+        { scale: 0, opacity: 0, y: 24, xPercent: -50, yPercent: -50 },
+        { scale: 1, opacity: 1, y: 0, xPercent: -50, yPercent: -50, duration: 0.55, ease: "power3.out" },
+        1.45
+      );
+
+      // Scene 2 (2.0–3.9s): the names shrink in place, THEN fan out into a row of small
+      // labels (two phases, so the still-large glyphs never overlap mid-flight); ✱ retires.
+      tl.to("#hook-spike", { opacity: 0, scale: 0.92, duration: 0.4, ease: "power2.in" }, 2.0);
+      tl.to("#hook-gpt", { scale: 0.22, opacity: 0.5, duration: 0.6, ease: "power3.inOut" }, 2.05);
+      tl.to("#hook-kimi", { scale: 0.22, opacity: 0.5, duration: 0.6, ease: "power3.inOut" }, 2.15);
+      tl.to("#hook-claude", { scale: 0.22, opacity: 0.5, duration: 0.6, ease: "power3.inOut" }, 2.25);
+      tl.to("#hook-gpt", { x: -269, y: 454, duration: 0.75, ease: "power3.inOut" }, 2.75);
+      tl.to("#hook-kimi", { x: 0, y: 254, duration: 0.75, ease: "power3.inOut" }, 2.85);
+      tl.to("#hook-claude", { x: 269, y: 54, duration: 0.75, ease: "power3.inOut" }, 2.95);
+
+      // Scene 3 (3.9–6.8s): the declaration reveals word by word in serif display, then holds.
+      var words = gsap.utils.toArray("#hook-statement .hook-w");
+      words.forEach(function (el, i) {
+        tl.fromTo(
+          el,
+          { opacity: 0, y: 22, filter: "blur(6px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "power3.out" },
+          3.9 + i * 0.28
+        );
+      });
+
+      // hairline rule draws on as the declaration settles, then everything holds to the end.
+      tl.fromTo("#hook-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power2.inOut" }, 5.35);
+
+      window.__timelines["01-hook"] = tl;
+    })();
+  </script>
+</template>

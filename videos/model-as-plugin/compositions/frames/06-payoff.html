@@ -1,0 +1,179 @@
+<template>
+  <style>
+    /* local system-font declarations — no font files ship with the project, no network */
+    @font-face {
+      font-family: "Noto Serif SC";
+      src: local("Noto Serif SC");
+    }
+    @font-face {
+      font-family: "Songti SC";
+      src: local("Songti SC");
+    }
+    @font-face {
+      font-family: "SimSun";
+      src: local("SimSun");
+    }
+    @font-face {
+      font-family: "Noto Sans Mono CJK";
+      src: local("Noto Sans Mono CJK");
+    }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* full-bleed ground rides the lowest track as a clip, never on #root */
+    .payoff-ground {
+      position: absolute;
+      inset: 0;
+      background: #faf9f5;
+    }
+
+    .payoff-kicker {
+      position: absolute;
+      top: 240px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      color: #141413;
+    }
+
+    .payoff-rule {
+      position: absolute;
+      top: 312px;
+      left: 50%;
+      width: 64px;
+      height: 1px;
+      margin-left: -32px;
+      background: color-mix(in srgb, #141413 22%, transparent);
+      transform-origin: 50% 50%;
+    }
+
+    .payoff-stage {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* all beats stack on the same center anchor; exactly one is visible at a time */
+    .payoff-beat {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding-bottom: 120px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    .payoff-num {
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: color-mix(in srgb, #141413 52%, transparent);
+      margin-bottom: 26px;
+    }
+
+    .payoff-line {
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 140px;
+      font-weight: 400;
+      line-height: 1.06;
+      letter-spacing: -0.018em;
+      color: #141413;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .payoff-line--two {
+      line-height: 1.16;
+      white-space: normal;
+    }
+
+    /* English technical terms stay monospace inside the serif line */
+    .payoff-adapter {
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 0.8em;
+      letter-spacing: 0;
+      margin: 0 0.1em;
+    }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="06-payoff"
+    data-start="0"
+    data-duration="11.04"
+    data-width="1920"
+    data-height="1080"
+  >
+    <div id="payoff-ground" class="clip payoff-ground" data-start="0" data-duration="11.04" data-track-index="0"></div>
+
+    <div id="payoff-kicker">这意味着：</div>
+    <div id="payoff-rule"></div>
+
+    <div class="payoff-stage">
+      <div class="payoff-beat" id="payoff-beat-1">
+        <div class="payoff-num">01</div>
+        <div class="payoff-line">不被任何厂商锁定</div>
+      </div>
+      <div class="payoff-beat" id="payoff-beat-2">
+        <div class="payoff-num">02</div>
+        <div class="payoff-line">多模型，随场景切换</div>
+      </div>
+      <div class="payoff-beat" id="payoff-beat-3">
+        <div class="payoff-num">03</div>
+        <div class="payoff-line payoff-line--two">新模型来了，<br />写个<span class="payoff-adapter">adapter</span>就接进来</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+
+    // initial states — immediate gsap.set so frame 0 already renders them
+    gsap.set("#payoff-kicker", { opacity: 0, y: 14 });
+    gsap.set("#payoff-rule", { scaleX: 0 });
+    gsap.set("#payoff-beat-1", { opacity: 0 });
+    gsap.set("#payoff-beat-2", { opacity: 0 });
+    gsap.set("#payoff-beat-3", { opacity: 0 });
+
+    const tl = gsap.timeline({ paused: true });
+
+    // Scene 1 (0.0–1.28s, p1「这意味着」): mono kicker lands, hairline rule draws on
+    tl.to("#payoff-kicker", { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 0.05);
+    tl.to("#payoff-rule", { scaleX: 1, duration: 0.5, ease: "power3.out" }, 0.25);
+
+    // Scene 2 (1.28–3.33s, p2「不被任何厂商锁定」): statement 01 rises in and holds
+    tl.fromTo(
+      "#payoff-beat-1",
+      { opacity: 0, scale: 0.94, y: 26 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.65, ease: "expo.out" },
+      1.28,
+    );
+
+    // Scene 3 (3.33–7.68s, p3+p4「多模型随场景切换 / 下一个新模型来了」): hard cut to statement 02, quiet lock-in settle
+    tl.set("#payoff-beat-1", { opacity: 0 }, 3.33);
+    tl.set("#payoff-beat-2", { opacity: 1, scale: 0.965 }, 3.33);
+    tl.to("#payoff-beat-2", { scale: 1, duration: 0.55, ease: "expo.out" }, 3.33);
+
+    // Scene 4 (7.68–11.04s, p5「写个适配器就接进来」): hard cut to statement 03, settles and holds to the end
+    tl.set("#payoff-beat-2", { opacity: 0 }, 7.68);
+    tl.set("#payoff-beat-3", { opacity: 1, scale: 0.965 }, 7.68);
+    tl.to("#payoff-beat-3", { scale: 1, duration: 0.55, ease: "expo.out" }, 7.68);
+
+    // full-span anchor so the timeline runs the whole 11.04s
+    tl.to({}, { duration: 11.04 }, 0);
+
+    window.__timelines["06-payoff"] = tl;
+  </script>
+</template>

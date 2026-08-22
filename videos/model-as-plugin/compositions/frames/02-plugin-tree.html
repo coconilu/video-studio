@@ -1,0 +1,302 @@
+<template>
+  <style>
+    /* Local system-font declarations (no font files ship with the project; no CDN). */
+    @font-face {
+      font-family: "Noto Serif SC";
+      src: local("Noto Serif SC");
+    }
+    @font-face {
+      font-family: "Songti SC";
+      src: local("Songti SC");
+    }
+    @font-face {
+      font-family: "SimSun";
+      src: local("SimSun");
+    }
+    @font-face {
+      font-family: "Noto Sans Mono CJK";
+      src: local("Noto Sans Mono CJK");
+    }
+
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+    }
+
+    /* ——— ground (full-bleed clip layer) ——— */
+    .plugin-tree-ground {
+      position: absolute;
+      inset: 0;
+      background: #faf9f5;
+    }
+    .plugin-tree-ground-dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(20, 20, 19, 0.05) 1px, transparent 1.5px);
+      background-size: 36px 36px;
+    }
+
+    /* ——— header ——— */
+    .plugin-tree-kicker {
+      position: absolute;
+      left: 120px;
+      top: 64px;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 1.1cqw;
+      font-weight: 500;
+      line-height: 1.4;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(20, 20, 19, 0.68);
+    }
+    .plugin-tree-headline {
+      position: absolute;
+      left: 118px;
+      top: 122px;
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 4.5cqw;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: #141413;
+      white-space: nowrap;
+    }
+    .plugin-tree-rule {
+      position: absolute;
+      left: 120px;
+      top: 252px;
+      width: 440px;
+      height: 1px;
+      background: rgba(20, 20, 19, 0.16);
+      transform-origin: 0% 50%;
+    }
+    .plugin-tree-coined {
+      position: absolute;
+      left: 120px;
+      top: 276px;
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-style: italic;
+      font-size: 2.1cqw;
+      font-weight: 400;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+      color: rgba(20, 20, 19, 0.72);
+    }
+
+    /* ——— tree group (settle target) ——— */
+    .plugin-tree-tree {
+      position: absolute;
+      inset: 0;
+      transform-origin: 880px 568px;
+    }
+    .plugin-tree-links {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    .plugin-tree-link {
+      fill: none;
+      stroke: rgba(20, 20, 19, 0.32);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+    }
+
+    /* ——— core node ——— */
+    .plugin-tree-core {
+      position: absolute;
+      left: 180px;
+      top: 488px;
+      width: 340px;
+      height: 160px;
+      box-sizing: border-box;
+      padding: 26px 30px;
+      background: #181715;
+      border: 1px solid rgba(250, 249, 245, 0.16);
+      border-radius: 12px;
+      box-shadow:
+        0 1px 3px rgba(20, 20, 19, 0.08),
+        0 4px 16px rgba(20, 20, 19, 0.04);
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .plugin-tree-core-tag {
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 1.05cqw;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(250, 249, 245, 0.62);
+    }
+    .plugin-tree-core-name {
+      margin-top: 10px;
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 2.5cqw;
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: 0.04em;
+      color: #faf9f5;
+    }
+
+    /* ——— leaf cards ——— */
+    .plugin-tree-leaf {
+      position: absolute;
+      left: 1120px;
+      width: 420px;
+      height: 124px;
+      box-sizing: border-box;
+      padding: 22px 28px;
+      background: #efe9de;
+      border: 1px solid rgba(20, 20, 19, 0.12);
+      border-radius: 12px;
+      box-shadow:
+        0 1px 3px rgba(20, 20, 19, 0.08),
+        0 4px 16px rgba(20, 20, 19, 0.04);
+      transform-origin: 0% 50%;
+      will-change: transform;
+    }
+    .plugin-tree-leaf-1 { top: 278px; }
+    .plugin-tree-leaf-2 { top: 430px; }
+    .plugin-tree-leaf-3 { top: 582px; }
+    .plugin-tree-leaf-4 {
+      top: 734px;
+      border: 1px solid #cc785c;
+    }
+    .plugin-tree-leaf-name {
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 1.8cqw;
+      font-weight: 400;
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+      color: #141413;
+    }
+    .plugin-tree-leaf-tag {
+      margin-top: 8px;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 1cqw;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+      color: rgba(20, 20, 19, 0.74);
+    }
+  </style>
+
+  <div id="root" data-composition-id="02-plugin-tree" data-width="1920" data-height="1080" data-duration="9.86">
+    <!-- ground -->
+    <div id="plugin-tree-ground" class="clip plugin-tree-ground" data-start="0" data-duration="10.76" data-track-index="0">
+      <div class="plugin-tree-ground-dots"></div>
+    </div>
+
+    <!-- header -->
+    <div class="plugin-tree-kicker">Plugin tree</div>
+    <div class="plugin-tree-headline">DeepSeek Harness</div>
+    <div class="plugin-tree-rule"></div>
+    <div class="plugin-tree-coined">一切皆插件</div>
+
+    <!-- plugin tree -->
+    <div class="plugin-tree-tree">
+      <svg class="plugin-tree-links" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+        <path class="plugin-tree-link" d="M 520 568 C 790 568, 870 340, 1120 340" />
+        <path class="plugin-tree-link" d="M 520 568 C 800 568, 880 492, 1120 492" />
+        <path class="plugin-tree-link" d="M 520 568 C 800 568, 880 644, 1120 644" />
+        <path class="plugin-tree-link" d="M 520 568 C 790 568, 870 796, 1120 796" />
+      </svg>
+
+      <div class="plugin-tree-core">
+        <div class="plugin-tree-core-tag">Cordis</div>
+        <div class="plugin-tree-core-name">微内核</div>
+      </div>
+
+      <div class="plugin-tree-leaf plugin-tree-leaf-1">
+        <div class="plugin-tree-leaf-name">工具</div>
+        <div class="plugin-tree-leaf-tag">tools</div>
+      </div>
+      <div class="plugin-tree-leaf plugin-tree-leaf-2">
+        <div class="plugin-tree-leaf-name">会话</div>
+        <div class="plugin-tree-leaf-tag">session</div>
+      </div>
+      <div class="plugin-tree-leaf plugin-tree-leaf-3">
+        <div class="plugin-tree-leaf-name">Loop</div>
+        <div class="plugin-tree-leaf-tag">agent-loop</div>
+      </div>
+      <div class="plugin-tree-leaf plugin-tree-leaf-4">
+        <div class="plugin-tree-leaf-name">模型适配器</div>
+        <div class="plugin-tree-leaf-tag">llm-adapter</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    {
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const treeRoot = document.querySelector('[data-composition-id="02-plugin-tree"]');
+      const q = (sel) => treeRoot.querySelector(sel);
+      const qa = (sel) => Array.from(treeRoot.querySelectorAll(sel));
+
+    // Connector dash setup — measured geometry, never guessed.
+    qa(".plugin-tree-link").forEach((p) => {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = `${len}`;
+      p.style.strokeDashoffset = `${len}`;
+    });
+
+    // Scene 1 (0.0–1.8s) — name settles, core pops.
+    tl.fromTo(
+      q(".plugin-tree-kicker"),
+      { opacity: 0, y: 8 },
+      { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+      0.05,
+    );
+    tl.fromTo(
+      q(".plugin-tree-headline"),
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" },
+      0.18,
+    );
+    tl.fromTo(
+      q(".plugin-tree-rule"),
+      { scaleX: 0 },
+      { scaleX: 1, duration: 0.5, ease: "power2.out" },
+      0.75,
+    );
+    tl.fromTo(
+      q(".plugin-tree-core"),
+      { opacity: 0, scale: 0 },
+      { opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" },
+      0.85,
+    );
+    tl.fromTo(
+      q(".plugin-tree-coined"),
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" },
+      1.25,
+    );
+
+    // Scene 2 (1.8–6.4s) + Scene 3 (6.4–8.6s) — branch draws, leaf pops on its cue.
+    const LEAF_BEATS = [2.3, 3.55, 4.8, 6.6];
+    const links = qa(".plugin-tree-link");
+    qa(".plugin-tree-leaf").forEach((leaf, i) => {
+      tl.to(links[i], { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" }, LEAF_BEATS[i]);
+      tl.fromTo(
+        leaf,
+        { opacity: 0, scale: 0, y: 12 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.58, ease: "power3.out" },
+        LEAF_BEATS[i] + 0.28,
+      );
+    });
+
+    // Hold drift, then Scene 4 (8.6–9.76s) — tree contracts into its final lock.
+    tl.to(q(".plugin-tree-tree"), { scale: 1.012, y: -6, duration: 2.55, ease: "sine.inOut" }, 6.05);
+    tl.to(q(".plugin-tree-tree"), { scale: 0.985, y: 0, duration: 0.7, ease: "power2.inOut" }, 8.6);
+
+      window.__timelines["02-plugin-tree"] = tl;
+    }
+  </script>
+</template>

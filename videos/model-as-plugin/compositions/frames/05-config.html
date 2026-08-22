@@ -1,0 +1,271 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Noto Sans Mono CJK";
+      src: local("Noto Sans Mono CJK"), local("NotoSansMonoCJK-Regular");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      container-type: size;
+    }
+    .cfg-ground {
+      position: absolute;
+      inset: 0;
+      background: #faf9f5;
+    }
+    .cfg-camera {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 252px;
+    }
+    .cfg-window {
+      width: 1190px;
+      background: #181715;
+      border: 1px solid rgba(250, 249, 245, 0.14);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(20, 20, 19, 0.1), 0 8px 28px rgba(20, 20, 19, 0.09);
+      overflow: hidden;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+    }
+    .cfg-titlebar {
+      height: 56px;
+      background: #252320;
+      border-bottom: 1px solid rgba(250, 249, 245, 0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 22px;
+    }
+    .cfg-dots {
+      display: flex;
+      gap: 9px;
+      flex: none;
+    }
+    .cfg-dots span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(250, 249, 245, 0.16);
+    }
+    .cfg-filename {
+      flex: 1;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(250, 249, 245, 0.62);
+    }
+    .cfg-title-tag {
+      flex: none;
+      font-size: 20px;
+      letter-spacing: 0.14em;
+      color: rgba(250, 249, 245, 0.32);
+    }
+    .cfg-body {
+      padding: 30px 0 34px;
+      font-size: 32px;
+      line-height: 1.6;
+    }
+    .cfg-line {
+      display: flex;
+      align-items: baseline;
+      padding: 0 38px;
+    }
+    .cfg-ln {
+      flex: none;
+      width: 46px;
+      margin-right: 20px;
+      text-align: right;
+      font-size: 24px;
+      color: rgba(250, 249, 245, 0.22);
+    }
+    .cfg-code {
+      white-space: pre;
+      color: #faf9f5;
+    }
+    .cfg-c {
+      display: none;
+    }
+    .cfg-t-pun { color: rgba(250, 249, 245, 0.42); }
+    .cfg-t-key { color: rgba(250, 249, 245, 0.94); }
+    .cfg-t-val { color: #faf9f5; }
+    .cfg-t-str { color: #5db8a6; }
+    .cfg-t-tag { color: #e8a55a; }
+    .cfg-t-exp { color: rgba(250, 249, 245, 0.78); }
+    .cfg-caret {
+      display: none;
+      width: 15px;
+      height: 30px;
+      margin-left: 1px;
+      background: rgba(250, 249, 245, 0.85);
+      vertical-align: -5px;
+    }
+    .cfg-status {
+      position: relative;
+      height: 54px;
+      background: #1f1e1b;
+      border-top: 1px solid rgba(250, 249, 245, 0.1);
+      font-size: 24px;
+      font-weight: 500;
+    }
+    .cfg-status-a,
+    .cfg-status-b {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 38px;
+    }
+    .cfg-status-a { color: rgba(250, 249, 245, 0.48); }
+    .cfg-status-b { color: #faf9f5; }
+    .cfg-dot-hollow {
+      flex: none;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(250, 249, 245, 0.4);
+    }
+    .cfg-check {
+      flex: none;
+      color: #cc785c;
+      font-size: 27px;
+    }
+  </style>
+
+  <div id="root" data-composition-id="05-config" data-width="1920" data-height="1080" data-duration="11.94">
+    <div class="clip cfg-ground" id="cfg-ground" data-start="0" data-duration="11.44" data-track-index="0"></div>
+    <div class="clip cfg-camera" id="cfg-camera" data-start="0" data-duration="11.44" data-track-index="1">
+      <div class="cfg-window">
+        <div class="cfg-titlebar">
+          <div class="cfg-dots"><span></span><span></span><span></span></div>
+          <div class="cfg-filename">cordis.patch.yml</div>
+          <div class="cfg-title-tag">YAML</div>
+        </div>
+        <div class="cfg-body">
+          <div class="cfg-line" data-l="0"><span class="cfg-ln">1</span><span class="cfg-code"></span></div>
+          <div class="cfg-line" data-l="1"><span class="cfg-ln">2</span><span class="cfg-code"></span></div>
+          <div class="cfg-line" data-l="2"><span class="cfg-ln">3</span><span class="cfg-code"></span></div>
+          <div class="cfg-line" data-l="3"><span class="cfg-ln">4</span><span class="cfg-code"></span></div>
+        </div>
+        <div class="cfg-status">
+          <div class="cfg-status-a"><span class="cfg-dot-hollow"></span><span>provider：待切换</span></div>
+          <div class="cfg-status-b"><span class="cfg-check">✓</span><span>provider 已切换</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["05-config"] = tl;
+
+      var root = document.querySelector('[data-composition-id="05-config"]');
+      var DURATION = 11.44;
+      var FLIP_T = 10.181; // lands on the VO cue 完成 (8.238–8.8)
+      var CARET_FROM = 0.95;
+      var BLINK_CYCLES = 12; // whole number: one cycle per 0.8s over 9.6s
+
+      // Line windows track the VO: "一段 patch：" 3.18–4.87 · "改个 baseURL，" 4.87–6.93 · "挂上你的凭据，" 6.93–8.24
+      var SEG_CLASS = {
+        pun: "cfg-t-pun",
+        key: "cfg-t-key",
+        val: "cfg-t-val",
+        str: "cfg-t-str",
+        tag: "cfg-t-tag",
+        exp: "cfg-t-exp",
+        ind: "",
+      };
+      var LINE_DEFS = [
+        { start: 3.869, per: 0.0718, segs: [["pun", "- "], ["key", "id"], ["pun", ": "], ["val", "llm-adapter"]] },
+        { start: 5.223, per: 0.0544, segs: [["ind", "  "], ["key", "config"], ["pun", ":"]] },
+        { start: 5.9, per: 0.0665, segs: [["ind", "    "], ["key", "baseURL"], ["pun", ": "], ["str", '"https://你的兼容端点/v1"']] },
+        { start: 8.222, per: 0.0375, segs: [["ind", "    "], ["key", "apiKey"], ["pun", ": "], ["tag", "!!js"], ["pun", " "], ["exp", "ctx.credentials.get("], ["str", "'MY_KEY'"], ["exp", ")"]] },
+      ];
+
+      var lines = LINE_DEFS.map(function (def, k) {
+        var codeEl = root.querySelector('.cfg-line[data-l="' + k + '"] .cfg-code');
+        var spans = [];
+        def.segs.forEach(function (seg) {
+          var cls = SEG_CLASS[seg[0]];
+          Array.from(seg[1]).forEach(function (ch) {
+            var s = document.createElement("span");
+            s.className = "cfg-c " + cls;
+            s.textContent = ch;
+            codeEl.appendChild(s);
+            spans.push(s);
+          });
+        });
+        var caret = document.createElement("span");
+        caret.className = "cfg-caret";
+        codeEl.appendChild(caret);
+        return { def: def, spans: spans, caret: caret, total: spans.length, end: def.start + spans.length * def.per };
+      });
+
+      // Scene 1 (0.0–3.2): window pops in, chrome staggers on, caret idles on line 1
+      var win = root.querySelector(".cfg-window");
+      tl.fromTo(win, { autoAlpha: 0, y: 26, scale: 0.965 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" }, 0.15);
+      tl.fromTo(root.querySelectorAll(".cfg-dots, .cfg-filename, .cfg-title-tag"), { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.35, stagger: 0.09, ease: "power2.out" }, 0.55);
+      tl.fromTo(root.querySelector(".cfg-status"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, ease: "power1.out" }, 0.95);
+
+      // Scene 2: line emphasis — baseURL as the VO closes on it, apiKey on 凭据/完成
+      var line3 = root.querySelector('.cfg-line[data-l="2"]');
+      var line4 = root.querySelector('.cfg-line[data-l="3"]');
+      tl.fromTo(line3, { backgroundColor: "rgba(250,249,245,0)" }, { backgroundColor: "rgba(250,249,245,0.09)", duration: 0.16, ease: "power1.out" }, 8.101);
+      tl.to(line3, { backgroundColor: "rgba(250,249,245,0)", duration: 0.45, ease: "power1.inOut" }, 8.851);
+      tl.fromTo(line4, { backgroundColor: "rgba(250,249,245,0)" }, { backgroundColor: "rgba(250,249,245,0.09)", duration: 0.12, ease: "power1.out" }, 10.011);
+      tl.to(line4, { backgroundColor: "rgba(250,249,245,0)", duration: 0.35, ease: "power1.inOut" }, 10.398);
+
+      // Scene 3 (8.42–9.6): machine answers — status strip flips to the coral ✓, then holds
+      var statusStrip = root.querySelector(".cfg-status");
+      var stateA = root.querySelector(".cfg-status-a");
+      var stateB = root.querySelector(".cfg-status-b");
+      tl.to(stateA, { autoAlpha: 0, duration: 0.15, ease: "power1.in" }, FLIP_T);
+      tl.fromTo(stateB, { autoAlpha: 0, scale: 0.92, y: 5, transformOrigin: "left center" }, { autoAlpha: 1, scale: 1, y: 0, duration: 0.4, ease: "power3.out" }, FLIP_T + 0.05);
+      tl.fromTo(statusStrip, { backgroundColor: "#1f1e1b" }, { backgroundColor: "#252320", duration: 0.15, ease: "power1.out" }, FLIP_T);
+      tl.to(statusStrip, { backgroundColor: "#1f1e1b", duration: 0.5, ease: "power1.inOut" }, 10.821);
+
+      // One slow continuous push-in under the whole shot
+      var cam = root.querySelector(".cfg-camera");
+      tl.fromTo(cam, { scale: 1, transformOrigin: "50% 46%" }, { scale: 1.02, duration: DURATION, ease: "none" }, 0);
+
+      // Typing engine: a linear driver; every frame is a pure function of driver time
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: DURATION,
+        duration: DURATION,
+        ease: "none",
+        onUpdate: function () {
+          var t = driver.t;
+          var caretLine = 0;
+          var typing = false;
+          lines.forEach(function (ln, k) {
+            var shown = Math.max(0, Math.min(ln.total, Math.floor((t - ln.def.start) / ln.def.per + 1e-6)));
+            for (var i = 0; i < ln.total; i++) {
+              // 样式表把 .cfg-c 默认 display:none，所以这里必须写显式值而不是 ""
+              var d = i < shown ? "inline" : "none";
+              if (ln.spans[i].style.display !== d) ln.spans[i].style.display = d;
+            }
+            if (t >= ln.def.start) caretLine = k;
+            if (t >= ln.def.start && t <= ln.end + 0.12) typing = true;
+          });
+          var caretOn = t >= CARET_FROM && t < FLIP_T;
+          var blinkOn = typing || Math.sin((t / DURATION) * Math.PI * 2 * BLINK_CYCLES) > 0;
+          lines.forEach(function (ln, k) {
+            var show = caretOn && k === caretLine;
+            var d = show ? "inline-block" : "none";
+            if (ln.caret.style.display !== d) ln.caret.style.display = d;
+            if (show) ln.caret.style.opacity = blinkOn ? "1" : "0";
+          });
+        },
+      }, 0);
+    })();
+  </script>
+</template>

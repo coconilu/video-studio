@@ -1,0 +1,341 @@
+<template>
+  <style>
+    /* Local-system CJK/Latin stacks per the frame's CJK rule — no font files ship
+       with the project, so each family is declared via src: local(...) (the
+       declaration satisfies font_family_without_font_face without a fetch). */
+    @font-face { font-family: "Noto Serif SC"; src: local("Noto Serif SC"); }
+    @font-face { font-family: "Songti SC"; src: local("Songti SC"); }
+    @font-face { font-family: "SimSun"; src: local("SimSun"); }
+    @font-face { font-family: "Noto Sans SC"; src: local("Noto Sans SC"); }
+    @font-face { font-family: "PingFang SC"; src: local("PingFang SC"); }
+    @font-face { font-family: "Microsoft YaHei"; src: local("Microsoft YaHei"); }
+    @font-face { font-family: "Noto Sans Mono CJK"; src: local("Noto Sans Mono CJK"); }
+
+    /* Root styled via #root (never a class on data-composition-id). Descendants are
+       selected by id attribute so digit-leading frame ids stay valid CSS. */
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #141413;
+    }
+
+    /* Full-bleed cream ground — its own clip layer, never painted on the root. */
+    [id="07-cta-ground"] {
+      position: absolute;
+      inset: 0;
+      background: #faf9f5;
+    }
+
+    [id="07-cta-headline"] {
+      position: absolute;
+      left: 50%;
+      top: 340px;
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 9.9cqw;
+      font-weight: 400;
+      line-height: 0.98;
+      letter-spacing: -0.028em;
+      color: #141413;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    /* Scene 2 — coral-$ chip that stretches into the wide terminal pill. */
+    [id="07-cta-chip"] {
+      position: absolute;
+      left: 50%;
+      top: 470px;
+      width: 176px;
+      height: 112px;
+      background: #181715;
+      border: 1px solid rgba(250, 249, 245, 0.14);
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      will-change: transform, opacity;
+    }
+    [id="07-cta-chip"] span {
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 48px;
+      line-height: 1;
+      color: #cc785c;
+    }
+
+    [id="07-cta-pill"] {
+      position: absolute;
+      left: 50%;
+      top: 470px;
+      width: 960px;
+      height: 112px;
+      background: #181715;
+      border: 1px solid rgba(250, 249, 245, 0.14);
+      border-radius: 9999px;
+      overflow: hidden;
+      will-change: transform;
+    }
+    [id="07-cta-term"] {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 64px;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 46px;
+      line-height: 1;
+      color: #faf9f5;
+      white-space: pre;
+    }
+    [id="07-cta-prompt"] {
+      color: #cc785c;
+      margin-right: 22px;
+    }
+    [id="07-cta-text-wrap"] {
+      display: inline-flex;
+      align-items: baseline;
+      min-width: 380px; /* >= widest typed state — stops right-edge jitter */
+      white-space: nowrap;
+    }
+    [id="07-cta-text"] {
+      white-space: pre;
+    }
+    [id="07-cta-cursor"] {
+      display: inline-block;
+      width: 26px;
+      height: 50px;
+      background: #faf9f5;
+      vertical-align: -8px;
+      opacity: 0; /* blink tween owns it from t=2.45 on */
+    }
+
+    /* Scene 3 — lesson cards. */
+    [id="07-cta-card-l3"],
+    [id="07-cta-card-l9"] {
+      position: absolute;
+      top: 620px;
+      width: 520px;
+      height: 176px;
+      background: #efe9de;
+      border: 1px solid rgba(20, 20, 19, 0.12);
+      border-radius: 12px;
+      box-shadow:
+        0 1px 3px rgba(20, 20, 19, 0.08),
+        0 4px 16px rgba(20, 20, 19, 0.04);
+      padding: 30px 36px;
+      will-change: transform, opacity;
+    }
+    [id="07-cta-card-l3"] {
+      left: 416px;
+    }
+    [id="07-cta-card-l9"] {
+      left: 984px;
+    }
+    [class~="07-cta-card-label"] {
+      display: block;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      color: rgba(20, 20, 19, 0.55);
+    }
+    [class~="07-cta-card-rule"] {
+      width: 48px;
+      height: 1px;
+      margin: 16px 0 14px;
+      background: rgba(20, 20, 19, 0.12);
+    }
+    [class~="07-cta-card-title"] {
+      font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+      font-size: 2.1cqw;
+      font-weight: 400;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: #141413;
+      white-space: nowrap;
+    }
+
+    [id="07-cta-mono"] {
+      position: absolute;
+      left: 50%;
+      top: 836px;
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(20, 20, 19, 0.6);
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+  </style>
+
+  <div id="root" data-composition-id="07-cta" data-width="1920" data-height="1080">
+    <div class="clip" id="07-cta-ground" data-start="0" data-duration="9.84" data-track-index="0"></div>
+
+    <div class="clip" id="07-cta-headline" data-start="0" data-duration="9.84" data-track-index="1">亲手做到？</div>
+
+    <div class="clip" id="07-cta-chip" data-start="1.6" data-duration="0.9" data-track-index="2"><span>$</span></div>
+
+    <div class="clip" id="07-cta-pill" data-start="2.05" data-duration="7.79" data-track-index="3">
+      <div id="07-cta-term">
+        <span id="07-cta-prompt">$</span>
+        <span id="07-cta-text-wrap"><span id="07-cta-text"></span><span id="07-cta-cursor"></span></span>
+      </div>
+    </div>
+
+    <div class="clip" id="07-cta-card-l3" data-start="2.5" data-duration="7.34" data-track-index="4">
+      <span class="07-cta-card-label">L3</span>
+      <div class="07-cta-card-rule"></div>
+      <div class="07-cta-card-title">接入任意模型</div>
+    </div>
+
+    <div class="clip" id="07-cta-card-l9" data-start="5.3" data-duration="4.54" data-track-index="5">
+      <span class="07-cta-card-label">L9</span>
+      <div class="07-cta-card-rule"></div>
+      <div class="07-cta-card-title">写一个模型适配器</div>
+    </div>
+
+    <div class="clip" id="07-cta-mono" data-start="6.0" data-duration="3.84" data-track-index="6">dsh-learning-guide · 实战课程</div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    window.__timelines["07-cta"] = tl;
+
+    // Frame length 9.84s (Elias voice). Phrase windows: 想亲手做到 0–1.70 ·
+    // 实战课程第三课带你接入 1.70–5.09 · 第九课带你造一个 5.09–7.63 · 评论区见 7.63–9.04.
+    const DURATION = 9.84;
+    const byId = (id) => document.getElementById(id);
+    const headlineEl = byId("07-cta-headline");
+    const chipEl = byId("07-cta-chip");
+    const pillEl = byId("07-cta-pill");
+    const termEl = byId("07-cta-term");
+    const textEl = byId("07-cta-text");
+    const cursorEl = byId("07-cta-cursor");
+    const cardL3El = byId("07-cta-card-l3");
+    const cardL9El = byId("07-cta-card-l9");
+    const monoEl = byId("07-cta-mono");
+
+    // Static centering offsets live outside the tween channels so no GSAP/CSS
+    // transform conflict can drop them.
+    gsap.set([headlineEl, chipEl, pillEl, monoEl], { xPercent: -50 });
+    gsap.set([chipEl, pillEl], { yPercent: -50 });
+
+    // Scene 1 (0–1.6s, 「想亲手做到」) — the opening headline settles, then
+    // demotes: shrinks, lifts, and fades to a faint gray that stays as backdrop.
+    tl.fromTo(
+      headlineEl,
+      { opacity: 0, y: 28 },
+      { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+      0,
+    );
+    tl.to(
+      headlineEl,
+      { scale: 0.42, y: -250, opacity: 0.45, duration: 0.6, ease: "power2.inOut" },
+      1.0,
+    );
+
+    // Scene 2 (1.6–3.5s) — the $ chip spring-pops in, holds a beat, then the wide
+    // terminal pill stretches horizontally out of its silhouette (chip fades over
+    // the pill's scaleX 0.1833 sliver = same 176×112 rounded shape, same center).
+    tl.fromTo(
+      chipEl,
+      { scale: 0, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.45, ease: "power3.out" },
+      1.6,
+    );
+    tl.to(chipEl, { opacity: 0, duration: 0.22, ease: "power1.in" }, 2.05);
+    tl.fromTo(
+      pillEl,
+      { scaleX: 0.1833, opacity: 1 },
+      { scaleX: 1, opacity: 1, duration: 0.55, ease: "power2.inOut" },
+      2.05,
+    );
+    // Terminal content fades in over the last ~40% of the stretch.
+    tl.fromTo(termEl, { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power1.out" }, 2.38);
+
+    // The command types character-by-character — discrete states reverse-searched
+    // every frame (seek-safe in both directions). Typing completes at 3.44s.
+    const SEQUENCE = [
+      { t: 0, text: "" },
+      { t: 2.5, text: "p" },
+      { t: 2.58, text: "pn" },
+      { t: 2.66, text: "pnp" },
+      { t: 2.74, text: "pnpm" },
+      { t: 2.86, text: "pnpm " },
+      { t: 2.96, text: "pnpm d" },
+      { t: 3.04, text: "pnpm ds" },
+      { t: 3.12, text: "pnpm dsh" },
+      { t: 3.2, text: "pnpm dsh " },
+      { t: 3.3, text: "pnpm dsh w" },
+      { t: 3.37, text: "pnpm dsh we" },
+      { t: 3.44, text: "pnpm dsh web" },
+    ];
+    const CHANGE_TIMES = SEQUENCE.filter((e, i) => i > 0 && e.text !== SEQUENCE[i - 1].text).map(
+      (e) => e.t,
+    );
+    function textAt(time) {
+      for (let i = SEQUENCE.length - 1; i >= 0; i--) {
+        if (time >= SEQUENCE[i].t) return SEQUENCE[i].text;
+      }
+      return "";
+    }
+    const driver = { t: 0 };
+    tl.to(
+      driver,
+      {
+        t: DURATION,
+        duration: DURATION,
+        ease: "none",
+        onUpdate: () => {
+          textEl.textContent = textAt(driver.t);
+        },
+      },
+      0,
+    );
+
+    // Caret — solid while keystrokes land (baked change times, no mutable state),
+    // deterministic square-wave blink when idle; whole cycles over [2.45, 9.84].
+    const blink = { p: 0 };
+    tl.to(
+      blink,
+      {
+        p: Math.PI * 2 * 9,
+        duration: 7.39,
+        ease: "none",
+        onUpdate: () => {
+          const typing = CHANGE_TIMES.some((ct) => ct <= driver.t && driver.t - ct < 0.18);
+          cursorEl.style.opacity = typing || Math.sin(blink.p) > 0 ? "1" : "0";
+        },
+      },
+      2.45,
+    );
+
+    // Scene 3 — the two lesson cards land on their phrase cues (「第三课」 from
+    // 2.5s, 「第九课」 from 5.3s), then the mono footer fades up.
+    tl.fromTo(
+      cardL3El,
+      { scale: 0, opacity: 0, y: 24 },
+      { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+      2.5,
+    );
+    tl.fromTo(
+      cardL9El,
+      { scale: 0, opacity: 0, y: 24 },
+      { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+      5.3,
+    );
+    tl.fromTo(
+      monoEl,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+      6.0,
+    );
+
+    // Scene 4 (6.5–9.84s) — full hold through 「评论区见」 and the tail; only the
+    // caret blink above keeps time.
+  </script>
+</template>

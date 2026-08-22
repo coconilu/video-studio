@@ -1,0 +1,414 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    /* 04-swap — 换模型 = 换插件。两层舞台：Consumer 卡（上）/ Provider 槽位（下），
+       接口连线不断；DeepSeek 卡滑出、OpenAI 兼容卡同节拍滑入；Consumer 上打出全帧唯一 coral ✓。 */
+    /* 本地 CJK 字体栈（dispatch 指定；系统字体用 local() 声明，无网络资源） */
+    @font-face {
+      font-family: "Noto Sans SC";
+      src: local("Noto Sans SC");
+    }
+    @font-face {
+      font-family: "PingFang SC";
+      src: local("PingFang SC");
+    }
+    @font-face {
+      font-family: "Microsoft YaHei";
+      src: local("Microsoft YaHei");
+    }
+    @font-face {
+      font-family: "Noto Sans Mono CJK";
+      src: local("Noto Sans Mono CJK");
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: #141413;
+    }
+    #root .clip {
+      position: absolute;
+      inset: 0;
+    }
+    .f04-mono {
+      font-family: "JetBrains Mono", "Noto Sans Mono CJK", monospace;
+    }
+
+    /* —— ground：满幅奶油底（自己的 clip 背景层，不进 #root） —— */
+    .f04-bg {
+      background: #faf9f5;
+    }
+
+    /* —— chrome：顶部 mono 索引行（无 coral，本帧 coral 只给 ✓） —— */
+    .f04-chrome-left,
+    .f04-chrome-right {
+      position: absolute;
+      top: 60px;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(20, 20, 19, 0.85);
+    }
+    .f04-chrome-left {
+      left: 80px;
+    }
+    .f04-chrome-right {
+      right: 80px;
+    }
+
+    /* —— Consumer 卡（上，supporting） —— */
+    .f04-consumer-card {
+      position: absolute;
+      left: 730px;
+      top: 150px;
+      width: 460px;
+      height: 124px;
+      background: #faf9f5;
+      border: 1px solid rgba(20, 20, 19, 0.12);
+      border-radius: 12px;
+      box-shadow:
+        0 1px 3px rgba(20, 20, 19, 0.08),
+        0 4px 16px rgba(20, 20, 19, 0.04);
+      padding: 24px 28px;
+    }
+    .f04-card-eyebrow {
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(20, 20, 19, 0.85);
+    }
+    .f04-consumer-name {
+      margin-top: 10px;
+      font-size: 34px;
+      font-weight: 500;
+      color: #141413;
+    }
+    .f04-diff-chip {
+      position: absolute;
+      right: 24px;
+      top: 50%;
+      margin-top: -21px;
+      padding: 8px 14px;
+      font-size: 22px;
+      color: #141413;
+      border: 1px solid rgba(20, 20, 19, 0.2);
+      border-radius: 9999px;
+      background: #efe9de;
+      opacity: 0;
+    }
+    /* 全帧唯一 coral：Consumer 卡的 ✓ 徽章 */
+    .f04-check-badge {
+      position: absolute;
+      left: 1167px;
+      top: 127px;
+      width: 46px;
+      height: 46px;
+      border-radius: 9999px;
+      background: #cc785c;
+      color: #faf9f5;
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 46px;
+      text-align: center;
+      box-shadow:
+        0 1px 3px rgba(20, 20, 19, 0.08),
+        0 4px 16px rgba(20, 20, 19, 0.04);
+      opacity: 0;
+    }
+
+    /* —— 接口连线（supporting，始终不断） —— */
+    .f04-wire {
+      position: absolute;
+      left: 960px;
+      top: 274px;
+      width: 1px;
+      height: 188px;
+      background: rgba(20, 20, 19, 0.3);
+    }
+    .f04-wire-pin {
+      position: absolute;
+      left: 956px;
+      width: 9px;
+      height: 9px;
+      background: #141413;
+    }
+    .f04-wire-pin-top {
+      top: 270px;
+    }
+    .f04-wire-pin-bottom {
+      top: 458px;
+    }
+    .f04-wire-chip {
+      position: absolute;
+      left: 890px;
+      top: 338px;
+      width: 140px;
+      padding: 7px 0;
+      text-align: center;
+      font-size: 22px;
+      color: rgba(20, 20, 19, 0.9);
+      background: #faf9f5;
+      border: 1px solid rgba(20, 20, 19, 0.2);
+      border-radius: 9999px;
+      opacity: 0;
+    }
+    .f04-pulse-dot {
+      position: absolute;
+      left: 955px;
+      top: 274px;
+      width: 11px;
+      height: 11px;
+      border-radius: 9999px;
+      background: rgba(20, 20, 19, 0.7);
+      opacity: 0;
+    }
+
+    /* —— Provider 槽位（下，foreground subject，~50% 槽位区） —— */
+    .f04-slot-label {
+      position: absolute;
+      left: 640px;
+      top: 420px;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(20, 20, 19, 0.85);
+      opacity: 0;
+    }
+    .f04-slot-frame {
+      position: absolute;
+      left: 640px;
+      top: 452px;
+      width: 640px;
+      height: 260px;
+      background: #efe9de;
+      border: 1px dashed rgba(20, 20, 19, 0.25);
+      border-radius: 12px;
+      opacity: 0;
+    }
+    .f04-provider-card {
+      position: absolute;
+      left: 664px;
+      top: 476px;
+      width: 592px;
+      height: 212px;
+      box-sizing: border-box;
+      background: #181715;
+      border: 1px solid rgba(250, 249, 245, 0.14);
+      border-radius: 8px;
+      padding: 30px 32px;
+      color: #faf9f5;
+    }
+    .f04-provider-card .f04-card-eyebrow {
+      color: rgba(250, 249, 245, 0.5);
+    }
+    .f04-provider-name {
+      margin-top: 12px;
+      font-size: 32px;
+      font-weight: 500;
+      color: #faf9f5;
+    }
+    .f04-provider-sub {
+      margin-top: 14px;
+      font-size: 27px;
+      color: rgba(250, 249, 245, 0.7);
+    }
+    .f04-card-b {
+      z-index: 2;
+      opacity: 0;
+    }
+    .f04-card-b .f04-provider-sub {
+      opacity: 0;
+    }
+    .f04-slot-caption {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 748px;
+      text-align: center;
+      font-size: 24px;
+      color: rgba(20, 20, 19, 0.85);
+      opacity: 0;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-swap" data-width="1920" data-height="1080" data-duration="9.62">
+    <!-- ground：自己的满幅 clip 背景层 -->
+    <div class="clip f04-bg" id="f04-bg" data-start="0" data-duration="9.12" data-track-index="0"></div>
+
+    <!-- Provider 槽位层 -->
+    <div class="clip" id="f04-slot-layer" data-start="0" data-duration="9.12" data-track-index="1">
+      <div class="f04-slot-label f04-mono" id="f04-slot-label">Provider 槽位</div>
+      <div class="f04-slot-frame" id="f04-slot-frame"></div>
+      <div class="f04-provider-card" id="f04-card-a">
+        <div class="f04-card-eyebrow f04-mono">Service Provider</div>
+        <div class="f04-provider-name f04-mono">llm-deepseek</div>
+        <div class="f04-provider-sub">DeepSeek 适配器</div>
+      </div>
+      <div class="f04-provider-card f04-card-b" id="f04-card-b">
+        <div class="f04-card-eyebrow f04-mono">Service Provider</div>
+        <div class="f04-provider-name f04-mono">llm-openai</div>
+        <div class="f04-provider-sub" id="f04-card-b-sub">OpenAI 兼容 provider</div>
+      </div>
+      <div class="f04-slot-caption f04-mono" id="f04-slot-caption">同一槽位 · 同一连线</div>
+    </div>
+
+    <!-- 接口连线层（横贯两层，swap 期间不断） -->
+    <div class="clip" id="f04-wire-layer" data-start="0" data-duration="9.12" data-track-index="2">
+      <div class="f04-wire" id="f04-wire"></div>
+      <div class="f04-wire-pin f04-wire-pin-top"></div>
+      <div class="f04-wire-pin f04-wire-pin-bottom"></div>
+      <div class="f04-wire-chip f04-mono" id="f04-wire-chip">llm 接口</div>
+      <div class="f04-pulse-dot" id="f04-pulse-dot"></div>
+    </div>
+
+    <!-- Consumer 层 -->
+    <div class="clip" id="f04-consumer-layer" data-start="0" data-duration="9.12" data-track-index="3">
+      <div class="f04-consumer-card" id="f04-consumer-card">
+        <div class="f04-card-eyebrow f04-mono">Consumer · 只认接口</div>
+        <div class="f04-consumer-name f04-mono">agent-loop</div>
+        <div class="f04-diff-chip f04-mono" id="f04-diff-chip">diff +0 −0</div>
+      </div>
+      <div class="f04-check-badge" id="f04-check-badge">✓</div>
+    </div>
+
+    <!-- chrome -->
+    <div class="clip" id="f04-chrome-layer" data-start="0" data-duration="9.12" data-track-index="4">
+      <div class="f04-chrome-left f04-mono" id="f04-chrome-left">Model as Plugin · 04 / Swap</div>
+      <div class="f04-chrome-right f04-mono" id="f04-chrome-right">DeepSeek Harness</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      var D = 9.12; // packet 固定时长（Elias 配音），不得改
+
+      var $ = function (id) {
+        return document.getElementById(id);
+      };
+
+      // —— Scene 1 (0.0–1.5s)：舞台建立，hero 在 0.5s 内已可见 ——
+      tl.fromTo(
+        [$("f04-chrome-left"), $("f04-chrome-right")],
+        { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        0.1,
+      );
+      tl.fromTo(
+        $("f04-consumer-card"),
+        { opacity: 0, y: -28 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+        0.2,
+      );
+      // 接口连线自上而下接通
+      tl.fromTo(
+        $("f04-wire"),
+        { scaleY: 0, transformOrigin: "50% 0%" },
+        { scaleY: 1, duration: 0.5, ease: "power2.inOut" },
+        0.55,
+      );
+      tl.fromTo(
+        $("f04-wire-chip"),
+        { opacity: 0 },
+        { opacity: 1, duration: 0.35, ease: "power1.out" },
+        0.9,
+      );
+      tl.fromTo(
+        [$("f04-slot-label"), $("f04-slot-frame")],
+        { opacity: 0 },
+        { opacity: 1, duration: 0.45, ease: "power1.out" },
+        0.65,
+      );
+      tl.fromTo(
+        $("f04-card-a"),
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" },
+        0.8,
+      );
+
+      // —— Scene 2 (1.09–5.03s)：VO「只是换掉 Provider 这片插件」——同一节拍、同一槽位的滑出/滑入替换。
+      // live-sync 签名：两条 tween 钉在同一个 label 上，连线全程不动。
+      tl.addLabel("swap", 1.6);
+      tl.to(
+        $("f04-card-a"),
+        { x: -760, opacity: 0, duration: 0.5, ease: "power2.in" },
+        "swap",
+      );
+      tl.fromTo(
+        $("f04-card-b"),
+        { x: 760, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" },
+        "swap",
+      );
+      // 落槽后：连线芯片一次轻「重连」脉冲 + 新卡副标延迟揭示
+      tl.to(
+        $("f04-wire-chip"),
+        { scale: 1.08, duration: 0.2, ease: "power1.inOut" },
+        2.45,
+      );
+      tl.to(
+        $("f04-wire-chip"),
+        { scale: 1, duration: 0.3, ease: "power1.inOut" },
+        2.65,
+      );
+      tl.fromTo(
+        $("f04-card-b-sub"),
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+        2.7,
+      );
+      tl.fromTo(
+        $("f04-slot-caption"),
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        3.5,
+      );
+
+      // —— Scene 3 (5.03–8.32s)：VO「接口不动」窗口连线脉冲一次；
+      // 「消费者一行代码不改」窗口 Consumer 卡打出全帧唯一 coral ✓，diff +0 −0 跟上。
+      tl.set($("f04-pulse-dot"), { opacity: 1 }, 5.3);
+      tl.fromTo(
+        $("f04-pulse-dot"),
+        { y: 0 },
+        { y: 182, duration: 0.55, ease: "power1.in" },
+        5.3,
+      );
+      tl.set($("f04-pulse-dot"), { opacity: 0 }, 5.87);
+      tl.to(
+        $("f04-wire-chip"),
+        { scale: 1.06, duration: 0.22, ease: "power1.inOut" },
+        5.3,
+      );
+      tl.to(
+        $("f04-wire-chip"),
+        { scale: 1, duration: 0.3, ease: "power1.inOut" },
+        5.52,
+      );
+      tl.fromTo(
+        $("f04-check-badge"),
+        { opacity: 0, scale: 0 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.8)" },
+        6.4,
+      );
+      tl.fromTo(
+        $("f04-diff-chip"),
+        { opacity: 0, x: 8 },
+        { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" },
+        6.8,
+      );
+
+      // —— Scene 4 (8.32–9.12s)：尾部静 hold，无 exit（root 转场即出场）——
+      tl.to({}, { duration: D }, 0); // 全时长锚点
+
+      window.__timelines["04-swap"] = tl;
+    })();
+  </script>
+</template>

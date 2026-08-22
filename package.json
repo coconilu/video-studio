@@ -1,0 +1,14 @@
+{
+  "name": "video-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "教学视频生产平台：阶段流水线 + 人工闸门 + fork 血缘，创作由本地 kimi code cli 驱动",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server/index.mjs",
+    "smoke": "node .probe/smoke.mjs"
+  }
+}

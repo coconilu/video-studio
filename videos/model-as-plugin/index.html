@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #FAF9F5;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="68.64"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div
+        id="el-01-hook"
+        class="scene"
+        data-composition-id="01-hook"
+        data-composition-src="compositions/frames/01-hook.html"
+        data-start="0"
+        data-duration="7.78"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-01-hook-voice"
+        src="audio/line-01.wav"
+        data-start="0"
+        data-duration="7.28"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-02-plugin-tree"
+        class="scene"
+        data-composition-id="02-plugin-tree"
+        data-composition-src="compositions/frames/02-plugin-tree.html"
+        data-start="7.28"
+        data-duration="9.86"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-02-plugin-tree-voice"
+        src="audio/line-02.wav"
+        data-start="7.28"
+        data-duration="9.36"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-03-seam"
+        class="scene"
+        data-composition-id="03-seam"
+        data-composition-src="compositions/frames/03-seam.html"
+        data-start="16.64"
+        data-duration="11.06"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-03-seam-voice"
+        src="audio/line-03.wav"
+        data-start="16.64"
+        data-duration="10.56"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-04-swap"
+        class="scene"
+        data-composition-id="04-swap"
+        data-composition-src="compositions/frames/04-swap.html"
+        data-start="27.200000000000003"
+        data-duration="9.62"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-04-swap-voice"
+        src="audio/line-04.wav"
+        data-start="27.200000000000003"
+        data-duration="9.12"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-05-config"
+        class="scene"
+        data-composition-id="05-config"
+        data-composition-src="compositions/frames/05-config.html"
+        data-start="36.32"
+        data-duration="11.44"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-05-config-voice"
+        src="audio/line-05.wav"
+        data-start="36.32"
+        data-duration="11.44"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-06-payoff"
+        class="scene"
+        data-composition-id="06-payoff"
+        data-composition-src="compositions/frames/06-payoff.html"
+        data-start="47.76"
+        data-duration="11.54"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-06-payoff-voice"
+        src="audio/line-06.wav"
+        data-start="47.76"
+        data-duration="11.04"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-07-cta"
+        class="scene"
+        data-composition-id="07-cta"
+        data-composition-src="compositions/frames/07-cta.html"
+        data-start="58.8"
+        data-duration="9.84"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-07-cta-voice"
+        src="audio/line-07.wav"
+        data-start="58.8"
+        data-duration="9.84"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <!-- captions -->
+      <div
+        id="el-captions"
+        class="scene"
+        data-composition-id="captions"
+        data-composition-src="compositions/captions.html"
+        data-start="0"
+        data-duration="68.64"
+        data-track-index="2"
+      ></div>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+      // ── frame transitions (injected by transitions.mjs) ──
+      (function () { var tl = window.__timelines["main"];
+        tl.to("#el-01-hook", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 7.28);
+        tl.fromTo("#el-02-plugin-tree", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 7.28);
+        tl.to("#el-02-plugin-tree", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 16.64);
+        tl.fromTo("#el-03-seam", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 16.64);
+        tl.to("#el-03-seam", { x: -1920, duration: 0.5, ease: "power3.inOut" }, 27.2);
+        tl.fromTo("#el-04-swap", { x: 1920, opacity: 1 }, { x: 0, duration: 0.5, ease: "power3.inOut" }, 27.2);
+        tl.to("#el-04-swap", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 36.32);
+        tl.fromTo("#el-05-config", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 36.32);
+        tl.to("#el-06-payoff", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 58.8);
+        tl.fromTo("#el-07-cta", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 58.8);
+        tl.to({}, { duration: 68.64 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
+      })();
+    </script>
+  </body>
+</html>
