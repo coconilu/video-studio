@@ -34,6 +34,18 @@ npm start          # http://127.0.0.1:4173
 
 所有外部路径集中在 `config.mjs`，每个都可用环境变量覆盖（`STUDIO_*` / `HYPERFRAMES_BROWSER_PATH`）。
 
+## 数据存放
+
+任务产物（每个任务的制品、音频、渲染结果）默认放在**用户级目录**，与代码分离——重装或 `git pull` 更新项目不会丢历史：
+
+| 平台 | 路径 |
+|------|------|
+| Windows | `%LOCALAPPDATA%\video-studio\videos` |
+| macOS | `~/Library/Application Support/video-studio/videos` |
+| Linux | `$XDG_DATA_HOME` 或 `~/.local/share/video-studio/videos` |
+
+用 `STUDIO_VIDEOS_DIR` 环境变量可指向任意位置（如移动硬盘、同步盘）。仓库里的 `videos/` 只放只读参考：`_template/`（新任务骨架）和 `model-as-plugin/`（示例 pilot，供 prompt 引用成熟实例）。
+
 ## 冒烟（不消耗模型/TTS 配额）
 
 ```bash

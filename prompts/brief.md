@@ -3,7 +3,7 @@
 ## 你要做的
 
 1. 阅读 `materials/NOTES.md`（材料笔记），以及同目录下 `BRIEF.md`（模板骨架，现在是占位内容）。
-2. 参考 `../_template/BRIEF.md` 的字段说明和 `../model-as-plugin/BRIEF.md` 的成熟实例，把当前目录的 `BRIEF.md` 改写为本任务的正式 Brief。
+2. 参考 `{{ref}}/_template/BRIEF.md` 的字段说明和 `{{ref}}/model-as-plugin/BRIEF.md` 的成熟实例，把当前目录的 `BRIEF.md` 改写为本任务的正式 Brief。
 
 ## 硬性要求
 

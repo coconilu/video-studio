@@ -3,7 +3,7 @@
 ## 你要做的
 
 1. 阅读：`BRIEF.md`（纲要）、`SCRIPT.md`（口播稿）、`audio_meta.json`（每条配音的实测时长与字幕短语时间窗）、`frame.md`（视觉设计预设）。
-2. 参考 `../_template/STORYBOARD.md` 的字段说明和 `../model-as-plugin/STORYBOARD.md` 的成熟实例，把当前目录的 `STORYBOARD.md` 改写为正式分镜表。
+2. 参考 `{{ref}}/_template/STORYBOARD.md` 的字段说明和 `{{ref}}/model-as-plugin/STORYBOARD.md` 的成熟实例，把当前目录的 `STORYBOARD.md` 改写为正式分镜表。
 
 ## 硬性要求
 

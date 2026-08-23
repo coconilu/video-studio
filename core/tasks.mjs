@@ -13,6 +13,9 @@ import { loadSpec } from "./spec.mjs";
 /** 阶段状态取值。 */
 export const STAGE_STATUS = ["pending", "running", "draft", "approved", "stale", "failed"];
 
+// 用户级产物目录可能在首次运行时尚不存在（尤其 macOS/Linux 的多级路径）。
+mkdirSync(VIDEOS_DIR, { recursive: true });
+
 /**
  * 读取任务元数据。
  * @param {string} id 任务 id（目录名）

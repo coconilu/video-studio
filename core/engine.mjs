@@ -6,7 +6,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { MOCK, PLATFORM_DIR } from "../config.mjs";
+import { MOCK, PLATFORM_DIR, REF_VIDEOS_DIR } from "../config.mjs";
 import { loadSpec } from "./spec.mjs";
 import { enqueue } from "./queue.mjs";
 import {
@@ -145,6 +145,7 @@ async function runReal(taskId, stage, log) {
       inputs: (stage.inputs || []).join("\n"),
       outputs: (stage.outputs || []).join("\n"),
       feedback: [feedback, extra].filter(Boolean).join("\n\n"),
+      ref: REF_VIDEOS_DIR.replaceAll("\\", "/"),
     });
     log(`== runner attempt ${n}/${maxAttempts}`);
     const res = await kimiCli.run(

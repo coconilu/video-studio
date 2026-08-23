@@ -1,7 +1,5 @@
-# 任务运行产物（videos/ 下除 _template 与 model-as-plugin 示例外）
-videos/*
-!videos/_template/
-!videos/model-as-plugin/
+# 任务产物在用户级目录（见 config.mjs 的 VIDEOS_DIR），不进仓库。
+# 仓库内 videos/ 只放只读参考：_template（任务骨架）与 model-as-plugin（示例 pilot）。
 videos/model-as-plugin/audio/
 videos/model-as-plugin/renders/
 videos/model-as-plugin/capture/
@@ -10,7 +8,7 @@ videos/model-as-plugin/node_modules/
 videos/model-as-plugin/.history/
 videos/model-as-plugin/.logs/
 
-# 任务目录内的运行残留
+# 运行残留
 **/node_modules/
 **/.history/
 **/.logs/

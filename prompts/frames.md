@@ -4,7 +4,7 @@
 
 1. 阅读：`STORYBOARD.md`（分镜表，含每帧 Scene 时间轴）、`frame.md`（视觉设计预设）、`audio_meta.json`（配音时长与短语时间窗）。当前目录的 `AGENTS.md` 是 HyperFrames 项目规则，必须遵守。
 2. 为 STORYBOARD.md 里的每一帧构建 `compositions/frames/NN-<slug>.html`（文件名与分镜表的 src 一一对应）。
-3. 可以参考 `../model-as-plugin/compositions/frames/` 下的成熟帧实现。
+3. 可以参考 `{{ref}}/model-as-plugin/compositions/frames/` 下的成熟帧实现。
 
 ## 硬性要求（违反任何一条都会被自动校验打回）
 

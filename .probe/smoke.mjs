@@ -4,10 +4,15 @@
  * 运行：node .probe/smoke.mjs
  */
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const PORT = 4199;
 const BASE = `http://127.0.0.1:${PORT}`;
+/** 冒烟产物写到临时目录，不碰真实用户数据目录（config.mjs 的默认 VIDEOS_DIR）。 */
+const TMP_VIDEOS = mkdtempSync(join(tmpdir(), "video-studio-smoke-"));
 let failures = 0;
 
 function check(name, cond, extra = "") {
@@ -41,7 +46,7 @@ async function waitStage(id, stage, status, timeoutMs = 30000) {
 
 const server = spawn(process.execPath, ["server/index.mjs"], {
   cwd: new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"),
-  env: { ...process.env, STUDIO_MOCK: "1", STUDIO_PORT: String(PORT) },
+  env: { ...process.env, STUDIO_MOCK: "1", STUDIO_PORT: String(PORT), STUDIO_VIDEOS_DIR: TMP_VIDEOS },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true,
 });
@@ -109,4 +114,5 @@ try {
   process.exitCode = 1;
 } finally {
   server.kill();
+  rmSync(TMP_VIDEOS, { recursive: true, force: true });
 }

@@ -26,7 +26,7 @@
 
 ## 2. 核心概念
 
-- **Task**：一条视频的生产实例 = `videos/<task-id>/` 目录 + `task.json`（元数据、阶段状态、尝试历史、闸门覆盖、血缘）。
+- **Task**：一条视频的生产实例 = `<VIDEOS_DIR>/<task-id>/` 目录 + `task.json`（元数据、阶段状态、尝试历史、闸门覆盖、血缘）。`VIDEOS_DIR` 默认是用户级目录（Windows `%LOCALAPPDATA%\video-studio\videos`、macOS `~/Library/Application Support/video-studio/videos`、Linux `$XDG_DATA_HOME/video-studio/videos`，`STUDIO_VIDEOS_DIR` 可覆盖）——产物与代码分离，重装/更新项目不丢历史（2026-08-23 变更）；仓库内 `videos/` 只放只读参考（`_template` + `model-as-plugin` 示例），prompt 里通过 `{{ref}}` 注入其绝对路径。
 - **Artifact**：制品即文件，格式沿用 `_template/`。制品不可变——打回重做产生新 attempt，旧版存 `.history/<stage>/<ts>/`。
 - **Stage**：pipeline spec 定义的有向步骤，三类：`model`（走 Runner）、`tool`（确定性脚本）、`review`（纯人工确认）。
 - **Gate**：阶段完成后的批准点，`required` / `auto`。

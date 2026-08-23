@@ -3,7 +3,7 @@
 ## 你要做的
 
 1. 阅读 `BRIEF.md`（已批准的创作纲要）。
-2. 参考 `../_template/SCRIPT.md` 的写作规范和 `../model-as-plugin/SCRIPT.md` 的成熟实例，把当前目录的 `SCRIPT.md` 改写为正式口播稿。
+2. 参考 `{{ref}}/_template/SCRIPT.md` 的写作规范和 `{{ref}}/model-as-plugin/SCRIPT.md` 的成熟实例，把当前目录的 `SCRIPT.md` 改写为正式口播稿。
 
 ## 硬性要求
 
