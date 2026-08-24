@@ -11,7 +11,7 @@ import { VIDEOS_DIR, TEMPLATE_DIR } from "../config.mjs";
 import { loadSpec } from "./spec.mjs";
 
 /** 阶段状态取值。 */
-export const STAGE_STATUS = ["pending", "running", "draft", "approved", "stale", "failed"];
+export const STAGE_STATUS = ["pending", "running", "draft", "approved", "stale", "failed", "confirm"];
 
 // 用户级产物目录可能在首次运行时尚不存在（尤其 macOS/Linux 的多级路径）。
 mkdirSync(VIDEOS_DIR, { recursive: true });
@@ -115,6 +115,9 @@ export function archiveAttempt(id, stage) {
     const src = join(dir, out);
     if (existsSync(src)) cpSync(src, join(dest, out), { recursive: true });
   }
+  // 多方案阶段的候选目录一并归档
+  const candDir = join(dir, "candidates", stage.id);
+  if (existsSync(candDir)) cpSync(candDir, join(dest, "candidates", stage.id), { recursive: true });
 }
 
 /**
@@ -164,6 +167,9 @@ export function forkTask(id, stageId) {
       const p = join(destDir, out.replace(/\*$/, ""));
       if (existsSync(p)) rmSync(p, { recursive: true, force: true });
     }
+    // 下游阶段的候选目录一并清除（避免陈旧变体误导）
+    const candDir = join(destDir, "candidates", s.id);
+    if (existsSync(candDir)) rmSync(candDir, { recursive: true, force: true });
   }
   writeFileSync(join(destDir, "task.json"), JSON.stringify(task, null, 2) + "\n");
   return task;

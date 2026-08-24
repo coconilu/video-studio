@@ -33,12 +33,28 @@ const CAPTIONS_HTML = `<!doctype html><html><body><template id="captions"></temp
 const INDEX_HTML = `<!doctype html><html><body><h1>mock index</h1></body></html>\n`;
 
 /**
- * @param {{workdir:string, outputs:string[], stageId:string}} job
+ * @param {{workdir:string, outputs:string[], stageId:string, candidates?:number}} job
  * @param {(line:string)=>void} log
  * @returns {Promise<{ok:boolean}>}
  */
 export async function run(job, log) {
   const taskId = job.workdir.split(/[\\/]/).pop();
+  const candN = job.candidates > 1 ? job.candidates : 0;
+  // 多方案阶段：每个变体写 candidates/<stage>/<i>/<output>，不写正式制品
+  if (candN) {
+    for (let i = 1; i <= candN; i += 1) {
+      for (const rel of job.outputs || []) {
+        if (rel.endsWith("*") || rel.endsWith("/")) {
+          log(`mock: skip candidate output ${rel}（目录/通配不支持候选）`);
+          continue;
+        }
+        const content = CANNED[rel] || `# mock ${rel}\n`;
+        writeArtifact(taskId, `candidates/${job.stageId}/${i}/${rel}`, `${content}\n<!-- 方案 ${i} -->\n`);
+      }
+    }
+    log(`mock: wrote ${candN} candidate variants for ${job.stageId}`);
+    return { ok: true };
+  }
   for (const rel of job.outputs || []) {
     if (rel.endsWith("*")) {
       writeArtifact(taskId, "compositions/frames/01-hook.html", FRAME_HTML(1));

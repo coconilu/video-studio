@@ -54,10 +54,13 @@ export function artifactExists(id, rel) {
  * 校验阶段产物：存在性 + 格式可解析（STORYBOARD.md 走 faceless parser，JSON 走 JSON.parse）。
  * @param {string} id 任务 id
  * @param {string[]} outputs 阶段声明的输出
+ * @param {string} [basePrefix] 候选变体场景的路径前缀（如 candidates/brief/1/），
+ *   outputs 与 STORYBOARD 内 src 的存在性检查都加该前缀
  * @returns {Promise<{ok:boolean, error?:string}>}
  */
-export async function validateOutputs(id, outputs) {
-  for (const rel of outputs || []) {
+export async function validateOutputs(id, outputs, basePrefix = "") {
+  for (const relRaw of outputs || []) {
+    const rel = basePrefix + relRaw;
     if (!artifactExists(id, rel)) return { ok: false, error: `missing output: ${rel}` };
     if (rel.endsWith("STORYBOARD.md")) {
       try {
@@ -71,8 +74,8 @@ export async function validateOutputs(id, outputs) {
           // built/animated 帧必须有 src 且文件在磁盘上。
           if (f.status === "built" || f.status === "animated") {
             if (!f.src) return { ok: false, error: `${rel}: frame ${f.index} (${f.status}) missing src` };
-            if (!existsSync(safePath(id, f.src))) {
-              return { ok: false, error: `${rel}: frame ${f.index} src not on disk: ${f.src}` };
+            if (!existsSync(safePath(id, basePrefix + f.src))) {
+              return { ok: false, error: `${rel}: frame ${f.index} src not on disk: ${basePrefix}${f.src}` };
             }
           }
         }

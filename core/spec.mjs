@@ -23,6 +23,10 @@ export function loadSpec(id) {
     if (!s.id || !["model", "tool", "review"].includes(s.type)) {
       throw new Error(`invalid stage in ${id}: ${JSON.stringify(s)}`);
     }
+    // candidates 仅适用于单文件输出；目录/通配输出没有可枚举的变体结构
+    if (s.candidates > 1 && (s.outputs || []).some((o) => o.endsWith("*") || o.endsWith("/"))) {
+      throw new Error(`stage ${s.id} in ${id}: candidates not supported for dir/glob outputs`);
+    }
   }
   return spec;
 }

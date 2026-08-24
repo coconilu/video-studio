@@ -14,6 +14,8 @@
 | D6 | fork 语义 | 制品不可变 + 下游失效级联 + 血缘记录（见 §7）。 |
 | D7 | 配额并发 | Runner 串行队列，并发 1 起步，可配。 |
 | D8 | 制品 schema | 沿用 `videos/_template/` 的文件格式（BRIEF/SCRIPT/STORYBOARD/audio_meta），校验复用 faceless-explainer 的 parser；管线脚本已 vendor 进 `tools/pipeline/`。 |
+| D9 | 闸门三态（2026-08-23） | gate 取值扩展为 `auto` / `required` / **`confirm`（启动前人工确认，完成后自动过）**。长耗时/耗配额的阶段先问再跑：`tts` / `frames` / `render` 默认 confirm。确认一次性消费——完成或打回后重跑需再次确认。任务级覆盖走 UI（`PUT /api/tasks/<id>/gates`），覆盖值同上三态。闸门值在阶段启动时定型：运行中改闸门不影响本次完成的落闸方式，只影响重跑。 |
+| D10 | 多方案候选（2026-08-23） | model 阶段可声明 `candidates: N`：**一次作业产出 N 份变体**到 `candidates/<stage>/<i>/`（路径结构与 outputs 相同），不直接写正式制品。人工在 UI 并排预览后批准其一，服务端把选中变体复制为正式制品；未选中的留档在 `candidates/` 供复盘。选「一次产出 N 份」而非「跑 N 次」：配额只花一份，差异由 prompt 保证。首期 `brief` 启用（`candidates: 3`）。 |
 
 ## 1. 定位与形态
 
@@ -27,9 +29,10 @@
 ## 2. 核心概念
 
 - **Task**：一条视频的生产实例 = `<VIDEOS_DIR>/<task-id>/` 目录 + `task.json`（元数据、阶段状态、尝试历史、闸门覆盖、血缘）。`VIDEOS_DIR` 默认是用户级目录（Windows `%LOCALAPPDATA%\video-studio\videos`、macOS `~/Library/Application Support/video-studio/videos`、Linux `$XDG_DATA_HOME/video-studio/videos`，`STUDIO_VIDEOS_DIR` 可覆盖）——产物与代码分离，重装/更新项目不丢历史（2026-08-23 变更）；仓库内 `videos/` 只放只读参考（`_template` + `model-as-plugin` 示例），prompt 里通过 `{{ref}}` 注入其绝对路径。
-- **Artifact**：制品即文件，格式沿用 `_template/`。制品不可变——打回重做产生新 attempt，旧版存 `.history/<stage>/<ts>/`。
+- **Artifact**：制品即文件，格式沿用 `_template/`。制品不可变——打回重做产生新 attempt，旧版存 `.history/<stage>/<attempt>/`，可经 API/UI 回看（`GET /api/tasks/<id>/history?stage=…`）。
 - **Stage**：pipeline spec 定义的有向步骤，三类：`model`（走 Runner）、`tool`（确定性脚本）、`review`（纯人工确认）。
-- **Gate**：阶段完成后的批准点，`required` / `auto`。
+- **Gate**：阶段的批准点，三态：`required`（完成后人工批准）/ `auto`（完成即过）/ `confirm`（启动前人工确认，D9）。
+- **Candidates**：model 阶段的多方案变体（D10、§11）。
 - **Fork**：见 §7。
 
 ## 3. 模块划分
@@ -50,7 +53,7 @@ platform/
 │   └── codex-cli.ts     ← 二期占位
 ├── tools/               ← 确定性阶段封装：tts / captions / assemble / transitions / check / render / probe（ffprobe）
 ├── bridges/             ← web-bridge、computer-use、media-hub gateway 的调用封装（§6）
-├── pipelines/           ← pipeline spec（YAML），首期内置 concept-explainer
+├── pipelines/           ← pipeline spec（JSON，§9 变更记录），首期内置 concept-explainer
 ├── prompts/             ← 各 model 阶段的 prompt 模板
 └── web/                 ← 前端（任务树 / 阶段时间线 / review 组件）
 ```
@@ -75,7 +78,7 @@ platform/
 }
 ```
 
-`status` 取值：`pending` / `running` / `draft`（待人工）/ `approved` / `stale`（上游变更失效）/ `failed`。`parent`：`{ "task": "<id>", "stage": "<stage-id>" }`。
+`status` 取值：`pending` / `running` / `draft`（待人工批准）/ `confirm`（待确认启动，D9）/ `approved` / `stale`（上游变更失效）/ `failed`。`parent`：`{ "task": "<id>", "stage": "<stage-id>" }`。
 
 ## 5. Pipeline Spec 与 Runner 接口
 
@@ -93,6 +96,7 @@ stages:
     inputs: [materials/NOTES.md]
     outputs: [BRIEF.md]
     gate: required
+    candidates: 3         # 一次产出 3 个方案，人工选其一（§11）
   - id: script
     type: model
     inputs: [BRIEF.md]
@@ -103,7 +107,7 @@ stages:
     impl: tools/tts   # media-hub gateway 直连，见 §6
     inputs: [SCRIPT.md]
     outputs: [audio/, audio_meta.json]
-    gate: auto
+    gate: confirm         # 耗配额，启动前确认（D9）
   - id: storyboard    # 此时已有真实配音时长，直接出精修版
     type: model
     inputs: [BRIEF.md, SCRIPT.md, audio_meta.json, frame.md]
@@ -113,7 +117,7 @@ stages:
     type: model
     inputs: [STORYBOARD.md, frame.md, audio_meta.json]
     outputs: [compositions/frames/*.html]
-    gate: auto
+    gate: confirm         # 长耗时（实测 >20min），启动前确认
     heal: { check: "npm run check", maxAttempts: 3 }   # 自愈循环，§8
   - id: assemble
     type: tool
@@ -124,7 +128,7 @@ stages:
     type: tool
     impl: tools/render     # 注入 HYPERFRAMES_BROWSER_PATH
     outputs: [renders/video.mp4]
-    gate: auto
+    gate: confirm         # 长耗时，启动前确认
   - id: final
     type: review
     inputs: [renders/video.mp4]
@@ -192,3 +196,14 @@ interface ModelRunner {
 5. **frames 阶段 20 分钟超时不够**：写 8 个帧的 kimi 作业实际耗时超过默认 `RUNNER_TIMEOUT_MS`（20min），产物写完但在翻 STORYBOARD 状态前被杀。修复：`pipelines/concept-explainer.json` 的 frames 阶段显式 `timeoutMs: 3600000`（engine 本就支持 per-stage `timeoutMs` 透传）。
 6. **`.cmd` 直接 spawn 抛 EINVAL**：`runRender`/`runCheck` 用 `spawn("npm.cmd", …, {shell:false})`，Node ≥18.20 起 Windows 上直接 exec `.cmd` 被拒绝。修复：`tools/steps.mjs` 的 `runCmd` 对 `.cmd` 结尾的命令自动 `shell: true`。
 7. **render 输出文件名带时间戳**：hyperframes render 产出 `renders/<任务名>_<时间戳>.mp4`，与 spec 声明的 `renders/video.mp4` 不符导致校验误报 failed（实际渲染成功）。修复：`runRender` 成功后把最新 mp4 归位复制为 `renders/video.mp4`。
+
+## 11. 多方案候选（candidates，D10）
+
+用户的决策价值集中在「选方向」而不是「等重跑」：与其打回后全量重做，不如让 model 阶段**一次作业产出 N 份有显著差异的变体**，人工并排预览后点选其一。
+
+- **spec**：阶段声明 `candidates: N`（N>1 才生效）。仅适合文档型输出（BRIEF/STORYBOARD 这类单文件）；目录/通配输出不做候选。
+- **落盘约定**：第 `i` 个变体写入 `candidates/<stage>/<i>/`，内部路径结构与 `outputs` 相同（如 `candidates/brief/2/BRIEF.md`）。runner **不写**正式制品路径。prompt 由引擎注入 `{{candidates}}` 指令块说明这一约定。
+- **校验**：每个变体独立过 `validateOutputs`（路径加前缀），任一变体失败即整体重试（复用 heal/反馈循环，错误信息指明是第几个变体）。
+- **批准**：`POST …/stages/<stage>/approve` 带 `{choice: i}`，服务端把 `candidates/<stage>/<i>/` 复制为正式制品后置 `approved`，并在阶段记录里写 `chosen: i`。本 attempt 尚未选过方案时不带 choice → 报错（模板骨架可能已占位 outputs 路径，不能以制品存在为由放行）；人工编辑正式制品后重新批准可不带 choice（沿用 `chosen` 记录）。打回/重跑清空 `chosen`。
+- **留档与清理**：未选中的变体保留在 `candidates/` 供复盘；打回时 `candidates/<stage>/` 随 outputs 一起归档进 `.history/`；fork 时下游阶段的 `candidates/<stage>/` 随其 outputs 一并清除。
+- **mock**：`runners/mock.mjs` 按 `candidates` 数量写变体文件，冒烟覆盖「选方案批准」链路。

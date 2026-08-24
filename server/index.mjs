@@ -4,14 +4,14 @@
  * @module server
  */
 import { createServer } from "node:http";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, extname, normalize } from "node:path";
 import { createReadStream } from "node:fs";
 import { PLATFORM_DIR, MOCK } from "../config.mjs";
 import { listSpecs, loadSpec } from "../core/spec.mjs";
 import { createTask, forkTask, listTasks, readTask } from "../core/tasks.mjs";
 import { readArtifact, safePath, writeArtifact } from "../core/artifacts.mjs";
-import { advance, approve, onArtifactEdited, reject } from "../core/engine.mjs";
+import { advance, approve, onArtifactEdited, reject, setGateOverride } from "../core/engine.mjs";
 
 const PORT = Number(process.env.STUDIO_PORT || 4173);
 const WEB_DIR = join(PLATFORM_DIR, "web");
@@ -70,15 +70,43 @@ function detail(task) {
   const spec = loadSpec(task.pipeline);
   return {
     ...task,
-    stageList: spec.stages.map((s) => ({
-      ...s,
-      status: task.stages[s.id]?.status || "pending",
-      attempt: task.stages[s.id]?.attempt || 0,
-      error: task.stages[s.id]?.error,
-      feedback: task.stages[s.id]?.feedback,
-      gate: task.gates?.[s.id] || s.gate || "auto",
-    })),
+    stageList: spec.stages.map((s) => {
+      const candN = s.candidates > 1 ? s.candidates : 0;
+      let candidateDirs = [];
+      if (candN) {
+        const base = safePath(task.id, join("candidates", s.id));
+        if (existsSync(base)) {
+          candidateDirs = readdirSync(base)
+            .filter((d) => /^\d+$/.test(d) && statSync(join(base, d)).isDirectory())
+            .map(Number).sort((a, b) => a - b);
+        }
+      }
+      return {
+        ...s,
+        candidates: candN,
+        candidateDirs,
+        status: task.stages[s.id]?.status || "pending",
+        attempt: task.stages[s.id]?.attempt || 0,
+        chosen: task.stages[s.id]?.chosen ?? null,
+        error: task.stages[s.id]?.error,
+        feedback: task.stages[s.id]?.feedback,
+        gate: task.gates?.[s.id] || s.gate || "auto",
+      };
+    }),
   };
+}
+
+/** 递归列出目录下所有文件（相对路径，正斜杠）。 */
+function listFilesRecursive(absBase, relBase) {
+  const out = [];
+  for (const entry of readdirSync(absBase, { withFileTypes: true })) {
+    if (entry.name.startsWith(".")) continue;
+    const abs = join(absBase, entry.name);
+    const rel = `${relBase}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...listFilesRecursive(abs, rel));
+    else out.push(rel);
+  }
+  return out;
 }
 
 /** API 路由表：[method, pattern(正则, 捕获组进 params), handler]。 */
@@ -97,6 +125,12 @@ const routes = [
   }],
   ["GET", /^\/api\/tasks\/(?<id>[^/]+)$/, async (_req, res, p) => json(res, 200, detail(readTask(p.id)))],
   ["POST", /^\/api\/tasks\/(?<id>[^/]+)\/advance$/, async (_req, res, p) => json(res, 200, await advance(p.id))],
+  ["PUT", /^\/api\/tasks\/(?<id>[^/]+)\/gates$/, async (req, res, p) => {
+    const body = JSON.parse(await readBody(req));
+    if (!body.stage || !body.gate) return json(res, 400, { error: "stage and gate required" });
+    await setGateOverride(p.id, body.stage, body.gate);
+    return json(res, 200, detail(readTask(p.id)));
+  }],
   ["POST", /^\/api\/tasks\/(?<id>[^/]+)\/fork$/, async (req, res, p) => {
     const body = JSON.parse(await readBody(req));
     if (!body.stage) return json(res, 400, { error: "stage required" });
@@ -104,7 +138,11 @@ const routes = [
     void advance(task.id);
     return json(res, 201, task);
   }],
-  ["POST", /^\/api\/tasks\/(?<id>[^/]+)\/stages\/(?<stage>[^/]+)\/approve$/, async (_req, res, p) => json(res, 200, await approve(p.id, p.stage))],
+  ["POST", /^\/api\/tasks\/(?<id>[^/]+)\/stages\/(?<stage>[^/]+)\/approve$/, async (req, res, p) => {
+    const raw = await readBody(req);
+    const body = raw ? JSON.parse(raw) : {};
+    return json(res, 200, await approve(p.id, p.stage, body.choice));
+  }],
   ["POST", /^\/api\/tasks\/(?<id>[^/]+)\/stages\/(?<stage>[^/]+)\/reject$/, async (req, res, p) => {
     const body = JSON.parse(await readBody(req));
     return json(res, 200, await reject(p.id, p.stage, body.feedback || ""));
@@ -129,6 +167,17 @@ const routes = [
     const rel = url.searchParams.get("path");
     if (!rel) return json(res, 400, { error: "path required" });
     return json(res, 200, { path: rel, content: readArtifact(p.id, rel) });
+  }],
+  ["GET", /^\/api\/tasks\/(?<id>[^/]+)\/history$/, async (_req, res, p, url) => {
+    const stage = url.searchParams.get("stage");
+    if (!stage) return json(res, 400, { error: "stage required" });
+    const base = safePath(p.id, join(".history", stage));
+    if (!existsSync(base)) return json(res, 200, { attempts: [] });
+    const attempts = readdirSync(base)
+      .filter((d) => /^\d+$/.test(d) && statSync(join(base, d)).isDirectory())
+      .sort((a, b) => Number(b) - Number(a))
+      .map((d) => ({ attempt: Number(d), files: listFilesRecursive(join(base, d), join(".history", stage, d).replaceAll("\\", "/")) }));
+    return json(res, 200, { attempts });
   }],
   ["GET", /^\/api\/tasks\/(?<id>[^/]+)\/logs$/, async (_req, res, p, url) => {
     const stage = url.searchParams.get("stage");
@@ -171,7 +220,7 @@ const server = createServer(async (req, res) => {
     }
     serveStatic(res, url.pathname);
   } catch (err) {
-    json(res, 500, { error: err.message });
+    json(res, err.clientError ? 400 : 500, { error: err.message });
   }
 });
 

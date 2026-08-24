@@ -71,8 +71,15 @@ try {
   check("ingest auto-approved", detail.stageList.find((s) => s.id === "ingest").status === "approved");
   check("brief draft at gate", true);
 
-  console.log("smoke: approve brief -> script gate");
-  await api("POST", `/api/tasks/${id}/stages/brief/approve`);
+  console.log("smoke: brief 多方案（candidates=3）→ 选方案 2 批准");
+  const briefStage = detail.stageList.find((s) => s.id === "brief");
+  check("brief has 3 candidate dirs", JSON.stringify(briefStage.candidateDirs) === "[1,2,3]",
+    JSON.stringify(briefStage.candidateDirs));
+  const noChoice = await api("POST", `/api/tasks/${id}/stages/brief/approve`);
+  check("approve without choice rejected (400)", noChoice.status === 400, `got ${noChoice.status}`);
+  await api("POST", `/api/tasks/${id}/stages/brief/approve`, { choice: 2 });
+  const chosenBrief = await api("GET", `/api/tasks/${id}/artifact?path=${encodeURIComponent("BRIEF.md")}`);
+  check("choice 2 copied to BRIEF.md", chosenBrief.status === 200 && chosenBrief.data.content.includes("方案 2"));
   detail = await waitStage(id, "script", "draft");
 
   console.log("smoke: reject script with feedback -> rerun -> draft again");
@@ -80,23 +87,51 @@ try {
   detail = await waitStage(id, "script", "draft");
   check("script attempt=2 after reject", detail.stageList.find((s) => s.id === "script").attempt === 2);
 
-  console.log("smoke: approve script -> tts(mock) auto -> storyboard gate");
-  await api("POST", `/api/tasks/${id}/stages/script/approve`);
-  detail = await waitStage(id, "storyboard", "draft");
-  check("tts auto-approved", detail.stageList.find((s) => s.id === "tts").status === "approved");
+  console.log("smoke: history archive（打回后 attempt 1 制品可查）");
+  const hist = await api("GET", `/api/tasks/${id}/history?stage=script`);
+  check("history lists attempt 1", hist.status === 200
+    && hist.data.attempts?.some((a) => a.attempt === 1 && a.files.some((f) => f.endsWith("SCRIPT.md"))),
+    JSON.stringify(hist.data).slice(0, 200));
 
-  console.log("smoke: approve storyboard -> frames/assemble/render(mock) -> final gate");
+  console.log("smoke: approve script -> tts 启动确认 -> storyboard gate");
+  await api("POST", `/api/tasks/${id}/stages/script/approve`);
+  detail = await waitStage(id, "tts", "confirm");
+  check("tts waits for start confirm", true);
+  await api("POST", `/api/tasks/${id}/stages/tts/approve`);
+  detail = await waitStage(id, "storyboard", "draft");
+  check("tts auto-approved after confirm", detail.stageList.find((s) => s.id === "tts").status === "approved");
+
+  console.log("smoke: approve storyboard -> frames/render 启动确认 -> final gate");
   await api("POST", `/api/tasks/${id}/stages/storyboard/approve`);
+  detail = await waitStage(id, "frames", "confirm");
+  check("frames waits for start confirm", true);
+  await api("POST", `/api/tasks/${id}/stages/frames/approve`);
+  detail = await waitStage(id, "render", "confirm");
+  check("render waits for start confirm", true);
+  check("assemble auto-approved", detail.stageList.find((s) => s.id === "assemble").status === "approved");
+  await api("POST", `/api/tasks/${id}/stages/render/approve`);
   detail = await waitStage(id, "final", "draft");
-  check("render auto-approved", detail.stageList.find((s) => s.id === "render").status === "approved");
+  check("render auto-approved after confirm", detail.stageList.find((s) => s.id === "render").status === "approved");
   const video = await api("GET", `/api/tasks/${id}/file?path=${encodeURIComponent("renders/video.mp4")}`);
   check("video.mp4 served", video.status === 200);
+
+  console.log("smoke: gate override（render 改为 required 应生效于 detail）");
+  const gateRes = await api("PUT", `/api/tasks/${id}/gates`, { stage: "render", gate: "required" });
+  check("gate override 200", gateRes.status === 200
+    && gateRes.data.stageList.find((s) => s.id === "render").gate === "required", JSON.stringify(gateRes.data).slice(0, 200));
+  await api("PUT", `/api/tasks/${id}/gates`, { stage: "render", gate: "confirm" });
 
   console.log("smoke: fork at storyboard（从全绿状态分叉）");
   const forked = await api("POST", `/api/tasks/${id}/fork`, { stage: "storyboard" });
   check("fork 201", forked.status === 201, JSON.stringify(forked.data));
   const fid = forked.data.id;
   check("fork parent recorded", forked.data.parent?.task === id && forked.data.parent?.stage === "storyboard");
+  await waitStage(fid, "frames", "confirm");
+  // confirm 阶段改闸门为 auto 应直接放行（无需点确认）
+  const release = await api("PUT", `/api/tasks/${fid}/gates`, { stage: "frames", gate: "auto" });
+  check("gate override releases confirm stage", release.status === 200, JSON.stringify(release.data).slice(0, 200));
+  await waitStage(fid, "render", "confirm");
+  await api("POST", `/api/tasks/${fid}/stages/render/approve`);
   const fdetail = await waitStage(fid, "final", "draft");
   check("fork storyboard stays approved", fdetail.stageList.find((s) => s.id === "storyboard").status === "approved");
   check("fork frames reran", fdetail.stageList.find((s) => s.id === "frames").status === "approved");
@@ -106,6 +141,20 @@ try {
   detail = (await api("GET", `/api/tasks/${id}`)).data;
   check("brief draft after edit", detail.stageList.find((s) => s.id === "brief").status === "draft");
   check("script stale after edit", detail.stageList.find((s) => s.id === "script").status === "stale");
+
+  console.log("smoke: 编辑后重新批准（不带 choice，沿用 chosen，编辑内容不被 copyChoice 覆盖）");
+  await api("POST", `/api/tasks/${id}/stages/brief/approve`);
+  const editedBrief = await api("GET", `/api/tasks/${id}/artifact?path=${encodeURIComponent("BRIEF.md")}`);
+  check("edit preserved after re-approve", editedBrief.status === 200 && editedBrief.data.content.includes("# edited brief"));
+  detail = await waitStage(id, "script", "draft");
+  check("brief approved after edit re-approve", detail.stageList.find((s) => s.id === "brief").status === "approved");
+
+  console.log("smoke: reject 候选阶段清空 chosen，新一轮须重新选方案");
+  await api("POST", `/api/tasks/${id}/stages/brief/reject`, { feedback: "" });
+  detail = await waitStage(id, "brief", "draft");
+  check("chosen cleared after reject", detail.stageList.find((s) => s.id === "brief").chosen == null);
+  const noChoice2 = await api("POST", `/api/tasks/${id}/stages/brief/approve`);
+  check("re-run requires choice again (400)", noChoice2.status === 400, `got ${noChoice2.status}`);
 
   console.log(failures === 0 ? "\nSMOKE PASS" : `\nSMOKE FAIL (${failures})`);
   process.exitCode = failures === 0 ? 0 : 1;

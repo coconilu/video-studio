@@ -9,10 +9,13 @@
 ## 流水线
 
 ```
-ingest → brief ⛩ → script ⛩ → tts → storyboard ⛩ → frames(+自愈) → assemble → render → final ⛩
+ingest → brief ⛩³ → script ⛩ → tts ✋ → storyboard ⛩ → frames(+自愈) ✋ → assemble → render ✋ → final ⛩
 ```
 
 - `⛩` = 人工闸门：阶段产出 draft 后停下，在网页上**批准**或**打回**（打回可附意见，带意见重做）。
+- `⛩³` = 多方案闸门：brief 阶段一次产出 3 个有显著差异的方案，网页上并排预览、批准其一；未选中的留档 `candidates/` 供复盘。
+- `✋` = 启动确认：长耗时/耗配额的阶段（tts、frames、render）启动前停下等人确认。每个阶段的闸门（自动 / 完成后批准 / 启动前确认）都可在网页上按任务覆盖。
+- 打回重做的旧版制品归档在 `.history/<stage>/<attempt>/`，阶段面板里可直接翻看历史版本。
 - 任何阶段可「**⑂ 从此 fork**」：复制该阶段及之前的制品生成新任务，血缘只增不改，UI 按任务树渲染。
 - frames 阶段自带自愈循环：kimi 写完帧后自动跑 `npm run check`（HyperFrames 校验），失败把错误回喂重试（≤3 次）。
 
@@ -49,7 +52,7 @@ npm start          # http://127.0.0.1:4173
 ## 冒烟（不消耗模型/TTS 配额）
 
 ```bash
-npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（16 项断言）
+npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（29 项断言，含多方案选择 / 启动确认 / 历史归档 / 编辑后重批）
 ```
 
 ## 仓库结构
