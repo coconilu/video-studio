@@ -6,7 +6,7 @@
  * 打回（reject）归档制品并带反馈重跑。
  * @module core/engine
  */
-import { cpSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { MOCK, PLATFORM_DIR, REF_VIDEOS_DIR } from "../config.mjs";
 import { loadSpec } from "./spec.mjs";
@@ -29,6 +29,13 @@ const TOOLS = {
 
 /** 内存中正在执行的任务集合（防重入）。 */
 const active = new Set();
+
+/** 客户端输入错误（server 映射为 400；其余错误为 500）。 */
+function clientErr(msg) {
+  const e = new Error(msg);
+  e.clientError = true;
+  return e;
+}
 
 /**
  * 阶段的生效闸门：任务级覆盖 > spec 声明 > auto。
@@ -85,7 +92,7 @@ export async function approve(taskId, stageId, choice) {
     return advance(taskId);
   }
   if (status !== "draft") {
-    throw new Error(`stage ${stageId} not awaiting approval (status=${status})`);
+    throw clientErr(`stage ${stageId} not awaiting approval (status=${status})`);
   }
   const spec = loadSpec(task.pipeline);
   const stage = spec.stages.find((s) => s.id === stageId);
@@ -94,13 +101,13 @@ export async function approve(taskId, stageId, choice) {
   if (candN) {
     if (choice != null) {
       const n = Number(choice);
-      if (!Number.isInteger(n) || n < 1 || n > candN) throw new Error(`bad choice: ${choice}`);
+      if (!Number.isInteger(n) || n < 1 || n > candN) throw clientErr(`bad choice: ${choice}`);
       copyChoice(taskId, stage, n);
       chosen = n;
     } else if (!task.stages[stageId]?.chosen) {
       // 本 attempt 尚未选过方案时必须带 choice（模板骨架可能已占位 outputs 路径，
       // 不能以制品存在为由放行）。人工编辑后重新批准走 stage.chosen 已记录的旧选择。
-      throw new Error(`stage ${stageId} has ${candN} candidates; choice required`);
+      throw clientErr(`stage ${stageId} has ${candN} candidates; choice required`);
     }
   }
   setStage(taskId, stageId, "approved", chosen ? { chosen } : {});
@@ -127,8 +134,10 @@ function copyChoice(taskId, stage, n) {
  * @returns {Promise<object>}
  */
 export async function setGateOverride(taskId, stageId, gate) {
-  if (!["auto", "required", "confirm"].includes(gate)) throw new Error(`bad gate: ${gate}`);
+  if (!["auto", "required", "confirm"].includes(gate)) throw clientErr(`bad gate: ${gate}`);
   const task = readTask(taskId);
+  const spec = loadSpec(task.pipeline);
+  if (!spec.stages.some((s) => s.id === stageId)) throw clientErr(`unknown stage: ${stageId}`);
   task.gates = { ...task.gates, [stageId]: gate };
   writeTask(taskId, task);
   if (task.stages[stageId]?.status === "confirm" && gate !== "confirm") {
@@ -183,6 +192,11 @@ async function executeStage(taskId, stage) {
     attempt,
     ...(stage.candidates > 1 ? { chosen: null } : {}),
   });
+  // 候选阶段重跑前清掉上一轮的变体目录（archiveAttempt 是复制不是移动），
+  // 否则残留文件会让 validateStage / UI 误读上一轮的方案。
+  if (stage.candidates > 1) {
+    rmSync(join(taskDir(taskId), "candidates", stage.id), { recursive: true, force: true });
+  }
   const gate = effectiveGate(task, stage);
   try {
     await enqueue(taskDir(taskId), stage.id, async (log) => {
@@ -263,7 +277,8 @@ async function validateStage(taskId, stage) {
   for (let i = 1; i <= candN; i += 1) {
     const v = await validateOutputs(
       taskId,
-      (stage.outputs || []).map((o) => `candidates/${stage.id}/${i}/${o}`),
+      stage.outputs || [],
+      `candidates/${stage.id}/${i}/`,
     );
     if (!v.ok) return { ok: false, error: `方案 ${i}/${candN}: ${v.error}` };
   }

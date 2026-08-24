@@ -52,7 +52,7 @@ npm start          # http://127.0.0.1:4173
 ## 冒烟（不消耗模型/TTS 配额）
 
 ```bash
-npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（23 项断言，含多方案选择 / 启动确认 / 历史归档）
+npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（29 项断言，含多方案选择 / 启动确认 / 历史归档 / 编辑后重批）
 ```
 
 ## 仓库结构

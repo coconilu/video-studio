@@ -87,6 +87,7 @@ function detail(task) {
         candidateDirs,
         status: task.stages[s.id]?.status || "pending",
         attempt: task.stages[s.id]?.attempt || 0,
+        chosen: task.stages[s.id]?.chosen ?? null,
         error: task.stages[s.id]?.error,
         feedback: task.stages[s.id]?.feedback,
         gate: task.gates?.[s.id] || s.gate || "auto",
@@ -219,7 +220,7 @@ const server = createServer(async (req, res) => {
     }
     serveStatic(res, url.pathname);
   } catch (err) {
-    json(res, 500, { error: err.message });
+    json(res, err.clientError ? 400 : 500, { error: err.message });
   }
 });
 

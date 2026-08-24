@@ -206,7 +206,7 @@ function detailSignature(d) {
   return [
     d.title, d.pipeline,
     d.parent ? `${d.parent.task}@${d.parent.stage}` : "",
-    d.stageList.map((s) => `${s.id}:${s.status}:${s.attempt}:${s.error || ""}:${s.feedback || ""}`).join("|"),
+    d.stageList.map((s) => `${s.id}:${s.status}:${s.attempt}:${s.error || ""}:${s.feedback || ""}:${s.gate}:${s.chosen ?? ""}`).join("|"),
   ].join("#");
 }
 
@@ -331,9 +331,12 @@ function stagePanelHtml(s) {
   return parts.join("");
 }
 
-/** 多方案阶段当前选中方案的 candidates 路径前缀；非候选场景返回 null。 */
+/** 多方案阶段当前选中方案的 candidates 路径前缀；非候选场景返回 null。
+ *  仅「本 attempt 尚未选过方案」的首次 draft 指向候选路径；编辑正式制品后回到 draft
+ *  （chosen 已记录）则展示正式制品，重新批准不再带 choice——否则 copyChoice 会冲掉人工编辑。 */
 function activeCandidatePrefix(s) {
   if (!(s.candidates > 1) || !(s.candidateDirs || []).length || s.status !== "draft") return null;
+  if (s.chosen != null) return null;
   const sel = ui.candSel[s.id] ?? s.candidateDirs[0];
   return `candidates/${s.id}/${sel}/`;
 }
@@ -596,12 +599,16 @@ async function doReject(stage) {
   await api(`/api/tasks/${enc(state.selectedId)}/stages/${enc(stage)}/reject`, { method: "POST", json: { feedback } });
   ui.rejectFor = null;
   delete ui.feedback[stage];
+  delete ui.candSel[stage];   // 重跑即新一轮方案/历史，清掉残留选择
+  delete ui.histSel[stage];
   toast(`已打回 ${stage}，重新排队`, "info");
   await refresh();
 }
 
 async function doRetry(stage) {
   await api(`/api/tasks/${enc(state.selectedId)}/stages/${enc(stage)}/reject`, { method: "POST", json: { feedback: "" } });
+  delete ui.candSel[stage];
+  delete ui.histSel[stage];
   toast(`已重新排队 ${stage}`, "info");
   await refresh();
 }
@@ -748,7 +755,7 @@ function bindEvents() {
       t.disabled = true;
       api(`/api/tasks/${enc(state.selectedId)}/gates`, { method: "PUT", json: { stage: gateFor, gate: t.value } })
         .then(() => toast(`已更新 ${gateFor} 闸门：${GATE_LABELS[t.value] || t.value}`, "info"))
-        .catch((err) => toast(err.message))
+        .catch((err) => { toast(err.message); void refresh(); }) // 失败回弹到生效值
         .finally(() => { t.disabled = false; void refresh(); });
     }
   });
