@@ -96,7 +96,9 @@ const STATUS_META = {
   approved: { label: "已批准", cls: "approved" },
   stale: { label: "已失效", cls: "stale" },
   failed: { label: "失败", cls: "failed" },
+  confirm: { label: "待确认启动", cls: "draft" },
 };
+const GATE_LABELS = { auto: "自动通过", required: "完成后人工批准", confirm: "启动前人工确认" };
 
 /* ---------- 状态 ---------- */
 const state = {
@@ -118,6 +120,8 @@ const ui = {
   editing: {},       // `${taskId}:${path}` -> {active, value}
   rejectFor: null,   // 打回表单展开的阶段 id
   feedback: {},      // stageId -> 打回意见草稿
+  histSel: {},       // stageId -> 查看中的历史 attempt 号
+  candSel: {},       // stageId -> 选中的候选方案号
 };
 
 function resetUi() {
@@ -128,6 +132,8 @@ function resetUi() {
   ui.editing = {};
   ui.rejectFor = null;
   ui.feedback = {};
+  ui.histSel = {};
+  ui.candSel = {};
 }
 
 /* ---------- 任务列表 / 血缘树 ---------- */
@@ -207,9 +213,9 @@ function detailSignature(d) {
 async function loadDetail(id) {
   try {
     const d = await api(`/api/tasks/${enc(id)}`);
-    // 首次进入自动展开最需要人看的阶段：待审/运行中/失败 > 未完成 > 最后一阶段
+    // 首次进入自动展开最需要人看的阶段：待审/待确认/运行中/失败 > 未完成 > 最后一阶段
     if (!ui.openStage) {
-      const pick = d.stageList.find((s) => ["draft", "running", "failed"].includes(s.status))
+      const pick = d.stageList.find((s) => ["draft", "confirm", "running", "failed"].includes(s.status))
         || d.stageList.find((s) => s.status !== "approved")
         || d.stageList[d.stageList.length - 1];
       if (pick) {
@@ -220,6 +226,7 @@ async function loadDetail(id) {
     const sig = detailSignature(d);
     const changed = sig !== state.detailSig || !state.detail || state.detail.id !== d.id;
     state.detail = d;
+    updateTitle(d);
     if (changed) {
       state.detailSig = sig;
       renderDetail();
@@ -227,6 +234,13 @@ async function loadDetail(id) {
   } catch (e) {
     toast(`加载任务详情失败：${e.message}`);
   }
+}
+
+/* ---------- 标题栏角标：有待人工处理的阶段时在标题前加 ● ---------- */
+const BASE_TITLE = document.title;
+function updateTitle(d) {
+  const needs = d && d.stageList.some((s) => ["draft", "confirm", "failed"].includes(s.status));
+  document.title = needs ? `● 待人工 · ${BASE_TITLE}` : BASE_TITLE;
 }
 
 async function selectTask(id) {
@@ -265,7 +279,8 @@ function stageRowHtml(s, i) {
   const meta = STATUS_META[s.status] || STATUS_META.pending;
   const open = ui.openStage === s.id;
   const label = STAGE_LABELS[s.id] || s.id;
-  const gate = s.gate === "required" ? `<span class="tag tag-gate">人工闸门</span>` : "";
+  const gate = s.gate === "required" ? `<span class="tag tag-gate">人工闸门</span>`
+    : s.gate === "confirm" ? `<span class="tag tag-gate">启动确认</span>` : "";
   const attempt = s.attempt > 0 ? `<span class="attempt mono">attempt ${s.attempt}</span>` : "";
   const icon = s.status === "running" ? `<span class="spin"></span>` : `<span class="bdot"></span>`;
   return `<div class="stage${open ? " open" : ""}">
@@ -290,6 +305,13 @@ function stagePanelHtml(s) {
   ].filter(Boolean).join(" · ");
   if (sub) parts.push(`<div class="panel-sub mono">${esc(sub)}</div>`);
 
+  // 闸门任务级覆盖（写入 task.gates）
+  parts.push(`<div class="gate-row"><span class="sec-label mono" style="margin:0">闸门</span>
+    <select class="hist-select" data-gate-select="${esc(s.id)}">
+      ${["auto", "required", "confirm"].map((g) => `<option value="${g}"${s.gate === g ? " selected" : ""}>${GATE_LABELS[g]}</option>`).join("")}
+    </select>
+  </div>`);
+
   // review（final）阶段无制品作业，直接把输入视频嵌进面板 + 闸门按钮
   if (s.type === "review") {
     for (const v of (s.inputs || []).filter((p) => kindOf(p) === "video")) {
@@ -300,12 +322,29 @@ function stagePanelHtml(s) {
   if (s.feedback) parts.push(`<div class="feedback-box"><span class="lbl mono">最近反馈</span>${esc(s.feedback)}</div>`);
 
   const secLabel = s.type === "review" ? "审阅对象 inputs" : "制品 outputs";
-  parts.push(`<div class="panel-sec"><div class="sec-label mono">${secLabel}</div><div class="arts" data-arts="${esc(s.id)}">${outputsHtml(s)}</div></div>`);
+  parts.push(`<div class="panel-sec"><div class="sec-label mono">${secLabel}</div>${candidatesBarHtml(s)}<div class="arts" data-arts="${esc(s.id)}">${outputsHtml(s)}</div></div>`);
+  parts.push(`<div data-history-slot="${esc(s.id)}"></div>`);
   parts.push(`<div class="preview-host" data-preview-host="${esc(s.id)}">${previewHtml(s)}</div>`);
   parts.push(stageActionsHtml(s));
   if (ui.rejectFor === s.id) parts.push(rejectFormHtml(s));
   parts.push(logsHtml(s));
   return parts.join("");
+}
+
+/** 多方案阶段当前选中方案的 candidates 路径前缀；非候选场景返回 null。 */
+function activeCandidatePrefix(s) {
+  if (!(s.candidates > 1) || !(s.candidateDirs || []).length || s.status !== "draft") return null;
+  const sel = ui.candSel[s.id] ?? s.candidateDirs[0];
+  return `candidates/${s.id}/${sel}/`;
+}
+
+/** 方案切换标签条（仅多方案 draft 阶段）。 */
+function candidatesBarHtml(s) {
+  if (!activeCandidatePrefix(s)) return "";
+  const sel = ui.candSel[s.id] ?? s.candidateDirs[0];
+  return `<div class="cand-tabs">${s.candidateDirs.map((n) =>
+    `<button class="cand-tab${n === sel ? " active" : ""}" data-action="cand-select" data-stage="${esc(s.id)}" data-n="${n}">方案 ${n}</button>`,
+  ).join("")}<span class="muted-note" style="padding:0">选中后预览即对应该方案，批准时采用它。</span></div>`;
 }
 
 function outputsHtml(s) {
@@ -316,6 +355,16 @@ function outputsHtml(s) {
   }
   const outs = s.outputs || [];
   if (!outs.length) return `<div class="muted-note">该阶段无声明制品。</div>`;
+  // 多方案阶段（draft 且候选已落盘）：制品行指向选中方案的 candidates 路径
+  const candPrefix = activeCandidatePrefix(s);
+  if (candPrefix) {
+    return outs.map((o) => {
+      if (o.endsWith("*") || o.endsWith("/")) {
+        return `<div class="muted-note">目录/通配输出 ${esc(o)} 不支持候选预览。</div>`;
+      }
+      return artifactRowHtml(s.id, `${candPrefix}${o}`);
+    }).join("");
+  }
   return outs.map((o) => {
     // 目录/通配输出无法直接列举（file 接口对目录 404），按平台约定硬编码展开规则
     if (o === "audio/") {
@@ -369,9 +418,12 @@ function previewHtml(s) {
         <div class="muted-note">保存会使所属阶段回到「待审」，下游阶段失效。</div>
       </div>`;
     }
+    // 历史版本只读，不提供编辑入口
+    const editBtn = p.path.startsWith(".history/") ? ""
+      : `<div class="row-actions"><button class="btn btn-ghost btn-sm" data-action="edit-artifact" data-path="${esc(p.path)}">编辑</button></div>`;
     return `<div class="preview">${label}
       <pre class="artifact-pre mono">${esc(content)}</pre>
-      <div class="row-actions"><button class="btn btn-ghost btn-sm" data-action="edit-artifact" data-path="${esc(p.path)}">编辑</button></div>
+      ${editBtn}
     </div>`;
   }
   return `<div class="preview">${label}<div class="muted-note">该类型暂不支持预览。</div></div>`;
@@ -379,8 +431,14 @@ function previewHtml(s) {
 
 function stageActionsHtml(s) {
   const btns = [];
+  if (s.status === "confirm") {
+    btns.push(`<button class="btn btn-primary btn-sm" data-action="approve" data-stage="${esc(s.id)}">确认开始</button>`);
+    btns.push(`<span class="muted-note">该阶段启动前需人工确认（耗时/耗配额）。</span>`);
+  }
   if (s.status === "draft") {
-    btns.push(`<button class="btn btn-primary btn-sm" data-action="approve" data-stage="${esc(s.id)}">批准</button>`);
+    const candSel = activeCandidatePrefix(s) ? (ui.candSel[s.id] ?? s.candidateDirs[0]) : null;
+    const approveLabel = candSel ? `批准方案 ${candSel}` : "批准";
+    btns.push(`<button class="btn btn-primary btn-sm" data-action="approve" data-stage="${esc(s.id)}">${approveLabel}</button>`);
     btns.push(`<button class="btn btn-danger btn-sm" data-action="reject-open" data-stage="${esc(s.id)}">打回</button>`);
   }
   if (s.status === "failed") {
@@ -432,7 +490,7 @@ function renderDetail() {
   void expandOutputs();
 }
 
-/* ---------- 目录型输出的硬编码展开（audio/ ← audio_meta.json；frames/* ← STORYBOARD.md） ---------- */
+/* ---------- 目录型输出的硬编码展开（audio/ ← audio_meta.json；frames/* ← STORYBOARD.md） + 历史版本 ---------- */
 async function expandOutputs() {
   const d = state.detail;
   if (!d) return;
@@ -460,6 +518,27 @@ async function expandOutputs() {
         : `<div class="muted-note">STORYBOARD.md 中没有帧条目。</div>`;
     } catch {
       el.innerHTML = `<div class="muted-note">STORYBOARD.md 尚未生成，暂时无法列出帧。</div>`;
+    }
+  }
+  // 历史版本（打回归档在 .history/<stage>/<attempt>/）：有记录才渲染该区块
+  for (const el of document.querySelectorAll("[data-history-slot]")) {
+    const stageId = el.getAttribute("data-history-slot");
+    try {
+      const j = await api(`/api/tasks/${enc(d.id)}/history?stage=${enc(stageId)}`);
+      const attempts = j.attempts || [];
+      if (!attempts.length) { el.innerHTML = ""; continue; }
+      const sel = ui.histSel[stageId] ?? attempts[0].attempt;
+      const cur = attempts.find((a) => a.attempt === sel) || attempts[0];
+      el.innerHTML = `<div class="panel-sec"><div class="sec-label mono">历史版本（打回归档，只读）</div>
+        <div class="row-actions" style="margin-bottom:8px">
+          <select class="hist-select" data-history-select="${esc(stageId)}">
+            ${attempts.map((a) => `<option value="${a.attempt}"${a.attempt === cur.attempt ? " selected" : ""}>attempt ${a.attempt}</option>`).join("")}
+          </select>
+        </div>
+        <div class="arts">${cur.files.map((p) => artifactRowHtml(stageId, p)).join("")}</div>
+      </div>`;
+    } catch {
+      el.innerHTML = "";
     }
   }
 }
@@ -504,8 +583,11 @@ async function refresh() {
 }
 
 async function doApprove(stage) {
-  await api(`/api/tasks/${enc(state.selectedId)}/stages/${enc(stage)}/approve`, { method: "POST", json: {} });
-  toast(`已批准 ${stage}`, "info");
+  const s = state.detail?.stageList.find((x) => x.id === stage);
+  const body = {};
+  if (s && activeCandidatePrefix(s)) body.choice = ui.candSel[stage] ?? s.candidateDirs[0];
+  await api(`/api/tasks/${enc(state.selectedId)}/stages/${enc(stage)}/approve`, { method: "POST", json: body });
+  toast(`已批准 ${stage}${body.choice ? `（方案 ${body.choice}）` : ""}`, "info");
   await refresh();
 }
 
@@ -610,6 +692,12 @@ function bindEvents() {
         break;
       }
       case "preview-artifact": void previewArtifact(stage, path); break;
+      case "cand-select": {
+        ui.candSel[stage] = Number(el.getAttribute("data-n"));
+        delete ui.preview[stage]; // 预览指向旧方案路径，切方案后清空
+        renderDetail();
+        break;
+      }
       case "edit-artifact": {
         const key = `${state.selectedId}:${path}`;
         ui.editing[key] = { active: true, value: state.artifactCache.get(key) || "" };
@@ -643,6 +731,26 @@ function bindEvents() {
     if (editKey && ui.editing[editKey]) ui.editing[editKey].value = t.value;
     const fbFor = t.getAttribute("data-feedback-for");
     if (fbFor) ui.feedback[fbFor] = t.value;
+  });
+
+  // 历史版本下拉 / 闸门覆盖下拉切换
+  document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    const histFor = t.getAttribute("data-history-select");
+    if (histFor) {
+      ui.histSel[histFor] = Number(t.value);
+      void expandOutputs();
+      return;
+    }
+    const gateFor = t.getAttribute("data-gate-select");
+    if (gateFor) {
+      t.disabled = true;
+      api(`/api/tasks/${enc(state.selectedId)}/gates`, { method: "PUT", json: { stage: gateFor, gate: t.value } })
+        .then(() => toast(`已更新 ${gateFor} 闸门：${GATE_LABELS[t.value] || t.value}`, "info"))
+        .catch((err) => toast(err.message))
+        .finally(() => { t.disabled = false; void refresh(); });
+    }
   });
 
   document.addEventListener("keydown", (e) => {

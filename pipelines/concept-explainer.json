@@ -15,7 +15,8 @@
       "prompt": "brief",
       "inputs": ["materials/NOTES.md"],
       "outputs": ["BRIEF.md"],
-      "gate": "required"
+      "gate": "required",
+      "candidates": 3
     },
     {
       "id": "script",
@@ -31,7 +32,7 @@
       "impl": "tools/tts",
       "inputs": ["SCRIPT.md"],
       "outputs": ["audio/", "audio_meta.json"],
-      "gate": "auto"
+      "gate": "confirm"
     },
     {
       "id": "storyboard",
@@ -47,7 +48,7 @@
       "prompt": "frames",
       "inputs": ["STORYBOARD.md", "frame.md", "audio_meta.json"],
       "outputs": ["compositions/frames/*"],
-      "gate": "auto",
+      "gate": "confirm",
       "timeoutMs": 3600000,
       "heal": { "check": "npm run check", "maxAttempts": 3 }
     },
@@ -63,7 +64,7 @@
       "type": "tool",
       "impl": "tools/render",
       "outputs": ["renders/video.mp4"],
-      "gate": "auto"
+      "gate": "confirm"
     },
     {
       "id": "final",
