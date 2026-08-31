@@ -12,7 +12,7 @@
 - `voiceover` 与 SCRIPT.md 对应行的缩进块**逐字一致**（TTS 实际读的就是它；多音字替代字也要保持一致）。
 - `duration` = audio_meta.json 对应 frame 的 `duration_s` + 0.8s 尾部 hold；`status` 填 `outline`（帧 HTML 尚未构建，下一步 frames 阶段会把已完成的帧翻成 `animated`）；`src` 用 `compositions/frames/NN-<slug>.html`（NN 为两位帧号）。
 - 每帧写 Scene 时间轴（`Scene k (a–b s): …`），**场景窗口必须对齐 audio_meta.json 的 words[] 短语时间窗**——画面元素只在配音念到它的那一拍出现，绝不前置倾倒。
-- 视觉纪律遵循 frame.md：cream 底、coral 每帧至多一处、暖 navy 只给代码/终端 surface、VO 节拍揭示铁律、negative list 全遵守。
+- 视觉纪律遵循本任务的 frame.md：其配色、字体、组件的全部约束与 negative list 都必须遵守；VO 节拍揭示是铁律。
 
 只改写 `STORYBOARD.md` 这一个文件。完成后回复 done。
 
