@@ -16,6 +16,7 @@
   </div>
   <div class="topbar-right">
     <span id="mock-badge" class="mock-badge mono" hidden>MOCK</span>
+    <button class="btn btn-ghost" data-action="open-settings" title="设置">⚙ 设置</button>
   </div>
 </header>
 
@@ -55,6 +56,16 @@
       <button type="button" class="btn btn-ghost" data-action="close-new">取消</button>
     </div>
   </form>
+</div>
+
+<div class="modal-veil" id="settings-modal" hidden>
+  <div class="modal">
+    <h2 class="modal-title">设置</h2>
+    <div id="settings-body"></div>
+    <div class="row-actions modal-actions">
+      <button type="button" class="btn btn-ghost" data-action="close-settings">关闭</button>
+    </div>
+  </div>
 </div>
 
 <script src="app.js" defer></script>

@@ -51,11 +51,15 @@ export function listTasks() {
 
 /**
  * 创建任务：复制 _template 骨架，初始化 task.json，写入用户输入材料。
- * @param {{title:string, pipeline:string, input?:{text?:string, urls?:string[]}}} req
+ * req.gates 可选：对象 {stageId: "auto"|"required"|"confirm"} 做任务级闸门覆盖；
+ * 或字符串 "auto" —— 一键全自动（所有阶段闸门改 auto，agent 无人值守跑全程）。
+ * @param {{title:string, pipeline:string, input?:{text?:string, urls?:string[]},
+ *   gates?:object|string}} req
  * @returns {object} 新任务的 task.json
  */
 export function createTask(req) {
   const spec = loadSpec(req.pipeline);
+  const gates = normalizeGates(req.gates, spec); // 先校验，避免参数错误时留下半截任务目录
   const slug = slugify(req.title) || "task";
   let id = slug;
   for (let n = 2; existsSync(join(VIDEOS_DIR, id)); n += 1) id = `${slug}-${n}`;
@@ -80,11 +84,36 @@ export function createTask(req) {
     pipeline: spec.id,
     createdAt: new Date().toISOString(),
     parent: null,
-    gates: {},
+    gates,
     stages: Object.fromEntries(spec.stages.map((s) => [s.id, { status: "pending", attempt: 0 }])),
   };
   writeTask(id, task);
   return task;
+}
+
+const GATE_VALUES = ["auto", "required", "confirm"];
+
+/** 规范化创建时的闸门覆盖："auto" 展开为全阶段 auto；对象逐阶段校验。 */
+function normalizeGates(gates, spec) {
+  if (gates == null) return {};
+  if (gates === "auto") {
+    return Object.fromEntries(spec.stages.map((s) => [s.id, "auto"]));
+  }
+  if (typeof gates !== "object" || Array.isArray(gates)) return badGates("gates must be \"auto\" or an object");
+  const out = {};
+  for (const [stageId, gate] of Object.entries(gates)) {
+    if (!spec.stages.some((s) => s.id === stageId)) return badGates(`unknown stage: ${stageId}`);
+    if (!GATE_VALUES.includes(gate)) return badGates(`bad gate for ${stageId}: ${gate}`);
+    out[stageId] = gate;
+  }
+  return out;
+}
+
+/** @returns {never} */
+function badGates(msg) {
+  const e = new Error(msg);
+  e.clientError = true;
+  throw e;
 }
 
 /**

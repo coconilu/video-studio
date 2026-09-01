@@ -12,6 +12,7 @@ import { listSpecs, loadSpec } from "../core/spec.mjs";
 import { createTask, forkTask, listTasks, readTask } from "../core/tasks.mjs";
 import { readArtifact, safePath, writeArtifact } from "../core/artifacts.mjs";
 import { advance, approve, onArtifactEdited, reject, setGateOverride } from "../core/engine.mjs";
+import { installSkill, skillStatus, uninstallSkill } from "../core/skill.mjs";
 
 const PORT = Number(process.env.STUDIO_PORT || 4173);
 const WEB_DIR = join(PLATFORM_DIR, "web");
@@ -112,6 +113,9 @@ function listFilesRecursive(absBase, relBase) {
 /** API 路由表：[method, pattern(正则, 捕获组进 params), handler]。 */
 const routes = [
   ["GET", /^\/api\/health$/, async (_req, res) => json(res, 200, { ok: true, mock: MOCK })],
+  ["GET", /^\/api\/skill$/, async (_req, res) => json(res, 200, skillStatus())],
+  ["POST", /^\/api\/skill\/install$/, async (_req, res) => json(res, 200, installSkill())],
+  ["POST", /^\/api\/skill\/uninstall$/, async (_req, res) => json(res, 200, uninstallSkill())],
   ["GET", /^\/api\/pipelines$/, async (_req, res) => json(res, 200, listSpecs())],
   ["GET", /^\/api\/tasks$/, async (_req, res) => {
     json(res, 200, listTasks().map((t) => ({ ...t, summary: summarize(t) })));

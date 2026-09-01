@@ -213,7 +213,14 @@ async function executeStage(taskId, stage) {
     });
     // required 落人工闸门；auto / confirm（启动前已确认过）完成即过。
     // confirmed 一次性消费：完成（或打回）后重跑需再次确认。
-    setStage(taskId, stage.id, gate === "required" ? "draft" : "approved", { feedback: "", confirmed: false });
+    const extra = { feedback: "", confirmed: false };
+    // 候选阶段在非 required 闸门下完成即过，没有人来做 choice：
+    // 自动采用第 1 个方案复制为正式制品（chosen=1 留痕，可事后打回改选）。
+    if (stage.candidates > 1 && gate !== "required") {
+      copyChoice(taskId, stage, 1);
+      extra.chosen = 1;
+    }
+    setStage(taskId, stage.id, gate === "required" ? "draft" : "approved", extra);
   } catch (err) {
     setStage(taskId, stage.id, "failed", { error: err.message });
   }
