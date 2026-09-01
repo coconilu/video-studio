@@ -726,6 +726,10 @@ function bindEvents() {
       case "advance-task": run(() => doAdvance()); break;
       case "open-new": openNewModal(); break;
       case "close-new": $("#new-modal").hidden = true; break;
+      case "open-settings": run(() => openSettings()); break;
+      case "close-settings": $("#settings-modal").hidden = true; break;
+      case "skill-install": run(() => doSkillInstall()); break;
+      case "skill-uninstall": run(() => doSkillUninstall()); break;
       default: break;
     }
   });
@@ -761,10 +765,14 @@ function bindEvents() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") $("#new-modal").hidden = true;
+    if (e.key === "Escape") { $("#new-modal").hidden = true; $("#settings-modal").hidden = true; }
   });
 
   $("#new-modal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+  });
+
+  $("#settings-modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) e.currentTarget.hidden = true;
   });
 
@@ -805,6 +813,49 @@ async function submitNewTask(form) {
   } catch (e) {
     toast(`创建失败：${e.message}`);
   }
+}
+
+/* ---------- 设置：agent skill 注册 / 更新 / 卸载 ---------- */
+async function openSettings() {
+  $("#settings-modal").hidden = false;
+  $("#settings-body").innerHTML = `<p class="muted-note">加载中…</p>`;
+  const skill = await api("/api/skill");
+  renderSettings(skill);
+}
+
+function renderSettings(skill) {
+  const statusText = !skill.installed
+    ? "未注册"
+    : skill.updateAvailable
+      ? `已注册 v${esc(skill.installedVersion || "?")} → 可更新到 v${esc(skill.version || "?")}`
+      : `已注册 v${esc(skill.installedVersion || "?")} · 已是最新`;
+  const actionBtn = !skill.installed
+    ? `<button class="btn btn-primary" data-action="skill-install">注册到全局 skill</button>`
+    : skill.updateAvailable
+      ? `<button class="btn btn-primary" data-action="skill-install">更新</button>
+         <button class="btn btn-ghost" data-action="skill-uninstall">卸载</button>`
+      : `<button class="btn btn-ghost" data-action="skill-uninstall">卸载</button>`;
+  $("#settings-body").innerHTML = `
+    <p class="modal-sub">把 <span class="mono">video-studio</span> skill 注册到全局 skill 目录后，
+    kimi / codex 等 agent 即可自动发现并驱动本平台生成视频。</p>
+    <div class="skill-card">
+      <div class="skill-row"><span class="skill-key mono">skill</span><span>${esc(skill.name)}（仓库自带 v${esc(skill.version || "?")}）</span></div>
+      <div class="skill-row"><span class="skill-key mono">状态</span><span>${statusText}</span></div>
+      <div class="skill-row"><span class="skill-key mono">安装位置</span><span class="mono skill-path" title="${esc(skill.destDir)}">${esc(skill.destDir)}</span></div>
+      <div class="row-actions skill-actions">${actionBtn}</div>
+    </div>`;
+}
+
+async function doSkillInstall() {
+  const r = await api("/api/skill/install", { method: "POST", json: {} });
+  renderSettings(r);
+  toast(r.action === "updated" ? "skill 已更新" : "skill 已注册，agent 现在可以发现它了", "info");
+}
+
+async function doSkillUninstall() {
+  const r = await api("/api/skill/uninstall", { method: "POST", json: {} });
+  renderSettings(r);
+  toast("skill 已卸载", "info");
 }
 
 /* ---------- 轮询：2s 一拍；失焦暂停；仅在需要时发请求 ---------- */

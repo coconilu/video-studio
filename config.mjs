@@ -64,6 +64,10 @@ export const KIMI_BIN = process.env.STUDIO_KIMI_BIN || "kimi";
 /** STUDIO_MOCK=1 时 Runner 与外部工具全部写占位产物，用于无配额冒烟。 */
 export const MOCK = process.env.STUDIO_MOCK === "1";
 
+/** 全局 agent skill 目录（设置页把 skill/ 注册为 <SKILLS_DIR>/video-studio/）。 */
+export const SKILLS_DIR =
+  process.env.STUDIO_SKILLS_DIR || join(os.homedir(), ".agents", "skills");
+
 /** 默认语音参数（与 pilot 一致）。 */
 export const TTS = {
   voice: process.env.STUDIO_TTS_VOICE || "Elias",

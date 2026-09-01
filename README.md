@@ -52,8 +52,25 @@ npm start          # http://127.0.0.1:4173
 ## 冒烟（不消耗模型/TTS 配额）
 
 ```bash
-npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（29 项断言，含多方案选择 / 启动确认 / 历史归档 / 编辑后重批）
+npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（44 项断言，含多方案选择 / 启动确认 / 历史归档 / 编辑后重批 / skill 注册 / 全自动模式）
 ```
+
+## Agent 接入（kimi / codex 驱动平台）
+
+平台的全部能力就是 REST API（`http://127.0.0.1:4173/api/*`，仅 loopback、无鉴权），agent 用 `curl` 即可驱动完整生产流程。仓库自带 `skill/`（agent 驱动说明书），两种注册方式：
+
+- **网页设置页**：右上角「⚙ 设置」→ 一键注册到全局 skill 目录（默认 `~/.agents/skills/video-studio/`，`STUDIO_SKILLS_DIR` 可覆盖），支持更新（内容比对检测）与卸载。
+- **手动**：把 `skill/` 整个复制为 `~/.agents/skills/video-studio/`。
+
+agent 全自动产出一条视频（所有闸门改 auto，brief 自动选方案 1）：
+
+```bash
+curl -X POST http://127.0.0.1:4173/api/tasks -H 'content-type: application/json' \
+  -d '{"title":"主题","pipeline":"concept-explainer","gates":"auto","input":{"text":"想法…"}}'
+# 之后轮询 GET /api/tasks/<id>，直到 stageList 全部 approved；成品在 renders/video.mp4
+```
+
+完整驱动指南（闸门语义、多方案 choice、打回重跑、错误处理）见 [skill/SKILL.md](skill/SKILL.md)。
 
 ## 仓库结构
 
@@ -64,6 +81,7 @@ runners/     模型 Runner（kimi-cli、mock）
 tools/       确定性步骤：tts、steps（assemble/check/render）、pipeline/（vendored 管线脚本）
 pipelines/   流水线 spec（JSON，声明阶段/类型/输入输出/闸门/自愈）
 prompts/     各模型阶段的 prompt 模板
+skill/       agent 驱动说明书（SKILL.md，可注册到全局 skill 目录，见「Agent 接入」）
 web/         浏览器 UI（原生 JS，无构建步骤）
 videos/      任务目录：_template/（新任务骨架）、model-as-plugin/（示例 pilot）
 ```

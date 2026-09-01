@@ -4,7 +4,7 @@
  * 运行：node .probe/smoke.mjs
  */
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -13,6 +13,8 @@ const PORT = 4199;
 const BASE = `http://127.0.0.1:${PORT}`;
 /** 冒烟产物写到临时目录，不碰真实用户数据目录（config.mjs 的默认 VIDEOS_DIR）。 */
 const TMP_VIDEOS = mkdtempSync(join(tmpdir(), "video-studio-smoke-"));
+/** skill 注册也指向临时目录，不碰真实 ~/.agents/skills。 */
+const TMP_SKILLS = mkdtempSync(join(tmpdir(), "video-studio-skills-"));
 let failures = 0;
 
 function check(name, cond, extra = "") {
@@ -46,7 +48,7 @@ async function waitStage(id, stage, status, timeoutMs = 30000) {
 
 const server = spawn(process.execPath, ["server/index.mjs"], {
   cwd: new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"),
-  env: { ...process.env, STUDIO_MOCK: "1", STUDIO_PORT: String(PORT), STUDIO_VIDEOS_DIR: TMP_VIDEOS },
+  env: { ...process.env, STUDIO_MOCK: "1", STUDIO_PORT: String(PORT), STUDIO_VIDEOS_DIR: TMP_VIDEOS, STUDIO_SKILLS_DIR: TMP_SKILLS },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true,
 });
@@ -60,6 +62,34 @@ try {
   check("health", health.data.ok === true && health.data.mock === true);
   const pipes = await api("GET", "/api/pipelines");
   check("pipelines", pipes.data.some((p) => p.id === "concept-explainer"));
+
+  console.log("smoke: skill 注册 / 更新 / 卸载（设置页 API）");
+  let skill = await api("GET", "/api/skill");
+  check("skill initially not installed", skill.status === 200 && skill.data.installed === false);
+  skill = await api("POST", "/api/skill/install", {});
+  check("skill install", skill.data.action === "installed" && skill.data.installed === true
+    && existsSync(join(TMP_SKILLS, "video-studio", "SKILL.md")), JSON.stringify(skill.data).slice(0, 200));
+  skill = await api("GET", "/api/skill");
+  check("skill up-to-date after install", skill.data.updateAvailable === false
+    && skill.data.installedVersion === skill.data.version);
+  writeFileSync(join(TMP_SKILLS, "video-studio", "SKILL.md"), "# tampered\n");
+  skill = await api("GET", "/api/skill");
+  check("tampered skill detected as update-available", skill.data.updateAvailable === true);
+  skill = await api("POST", "/api/skill/install", {});
+  check("skill re-install acts as update", skill.data.action === "updated" && skill.data.updateAvailable === false);
+  skill = await api("POST", "/api/skill/uninstall", {});
+  check("skill uninstall", skill.data.action === "uninstalled" && skill.data.installed === false
+    && !existsSync(join(TMP_SKILLS, "video-studio")));
+
+  console.log("smoke: 非法 gates 参数被拒绝");
+  const badGates = await api("POST", "/api/tasks", {
+    title: "坏闸门", pipeline: "concept-explainer", gates: { nope: "auto" },
+  });
+  check("unknown stage in gates -> 400", badGates.status === 400, `got ${badGates.status}`);
+  const badGateVal = await api("POST", "/api/tasks", {
+    title: "坏闸门2", pipeline: "concept-explainer", gates: { brief: "yolo" },
+  });
+  check("bad gate value -> 400", badGateVal.status === 400, `got ${badGateVal.status}`);
 
   console.log("smoke: create + auto-advance to brief gate");
   const created = await api("POST", "/api/tasks", {
@@ -156,6 +186,35 @@ try {
   const noChoice2 = await api("POST", `/api/tasks/${id}/stages/brief/approve`);
   check("re-run requires choice again (400)", noChoice2.status === 400, `got ${noChoice2.status}`);
 
+  console.log("smoke: 全自动模式（gates:\"auto\" 一键跑到 final approved，brief 自动选方案 1）");
+  const autoTask = await api("POST", "/api/tasks", {
+    title: "全自动冒烟", pipeline: "concept-explainer", gates: "auto", input: { text: "无人值守。" },
+  });
+  check("auto task 201", autoTask.status === 201, JSON.stringify(autoTask.data));
+  const aid = autoTask.data.id;
+  check("gates expanded to all stages", autoTask.data.gates?.render === "auto" && autoTask.data.gates?.final === "auto");
+  const autoDetail = await waitStage(aid, "final", "approved", 60000);
+  const autoBrief = autoDetail.stageList.find((s) => s.id === "brief");
+  check("brief auto-approved with chosen=1", autoBrief.status === "approved" && autoBrief.chosen === 1,
+    JSON.stringify(autoBrief));
+  check("all stages approved", autoDetail.stageList.every((s) => s.status === "approved"));
+  const autoVideo = await api("GET", `/api/tasks/${aid}/file?path=${encodeURIComponent("renders/video.mp4")}`);
+  check("auto pipeline produced video.mp4", autoVideo.status === 200);
+
+  console.log("smoke: gates 对象形式 + confirm 闸门下候选阶段也自动选 1");
+  const objTask = await api("POST", "/api/tasks", {
+    title: "对象闸门", pipeline: "concept-explainer", gates: { brief: "confirm", tts: "auto" },
+  });
+  check("object gates accepted", objTask.status === 201
+    && objTask.data.gates?.brief === "confirm" && objTask.data.gates?.tts === "auto",
+    JSON.stringify(objTask.data).slice(0, 200));
+  const oid = objTask.data.id;
+  await waitStage(oid, "brief", "confirm"); // confirm 闸门：启动前停下
+  await api("POST", `/api/tasks/${oid}/stages/brief/approve`); // 确认启动
+  const odetail = await waitStage(oid, "brief", "approved"); // confirm 完成即过
+  check("confirm gate auto-picks choice 1",
+    odetail.stageList.find((s) => s.id === "brief").chosen === 1);
+
   console.log(failures === 0 ? "\nSMOKE PASS" : `\nSMOKE FAIL (${failures})`);
   process.exitCode = failures === 0 ? 0 : 1;
 } catch (err) {
@@ -164,4 +223,5 @@ try {
 } finally {
   server.kill();
   rmSync(TMP_VIDEOS, { recursive: true, force: true });
+  rmSync(TMP_SKILLS, { recursive: true, force: true });
 }
