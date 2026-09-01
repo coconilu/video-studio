@@ -52,7 +52,7 @@ npm start          # http://127.0.0.1:4173
 ## 冒烟（不消耗模型/TTS 配额）
 
 ```bash
-npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（42 项断言，含多方案选择 / 启动确认 / 历史归档 / 编辑后重批 / skill 注册 / 全自动模式）
+npm run smoke      # STUDIO_MOCK=1，走通状态机全链路（44 项断言，含多方案选择 / 启动确认 / 历史归档 / 编辑后重批 / skill 注册 / 全自动模式）
 ```
 
 ## Agent 接入（kimi / codex 驱动平台）

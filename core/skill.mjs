@@ -15,11 +15,13 @@ export const SKILL_SRC_DIR = join(PLATFORM_DIR, "skill");
 /** 全局安装目标目录。 */
 export const SKILL_DEST_DIR = join(SKILLS_DIR, SKILL_NAME);
 
-/** 从 SKILL.md frontmatter 里抠 version 字段（没有则 null）。 */
+/** 从 SKILL.md frontmatter（首个 --- 块）里抠 version 字段（没有则 null）。 */
 function versionOf(dir) {
   const file = join(dir, "SKILL.md");
   if (!existsSync(file)) return null;
-  const m = /^\s*version:\s*(\S+)\s*$/m.exec(readFileSync(file, "utf8"));
+  const text = readFileSync(file, "utf8");
+  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+  const m = /^\s*version:\s*(\S+)\s*$/m.exec(fm ? fm[1] : text);
   return m ? m[1] : null;
 }
 
@@ -33,9 +35,13 @@ export function skillStatus() {
   const installed = existsSync(join(SKILL_DEST_DIR, "SKILL.md"));
   const version = versionOf(SKILL_SRC_DIR);
   const installedVersion = installed ? versionOf(SKILL_DEST_DIR) : null;
-  // 内容不一致即视为可更新（覆盖版本号没变但内容修了的情况）
-  const updateAvailable = installed
-    && readFileSync(join(SKILL_SRC_DIR, "SKILL.md"), "utf8")
+  // 内容不一致即视为可更新（覆盖版本号没变但内容修了的情况）。
+  // 注意：只比对 SKILL.md 单文件——当前 skill/ 只有这一个文件；
+  // 若日后往 skill/ 加辅助文件，这里要扩展为目录整体哈希。
+  // 源文件被删（仓库移动等）时宽容处理：version=null 且不再判 updateAvailable。
+  const srcFile = join(SKILL_SRC_DIR, "SKILL.md");
+  const updateAvailable = installed && existsSync(srcFile)
+    && readFileSync(srcFile, "utf8")
       !== readFileSync(join(SKILL_DEST_DIR, "SKILL.md"), "utf8");
   return {
     name: SKILL_NAME,

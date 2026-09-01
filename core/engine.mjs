@@ -215,7 +215,9 @@ async function executeStage(taskId, stage) {
     // confirmed 一次性消费：完成（或打回）后重跑需再次确认。
     const extra = { feedback: "", confirmed: false };
     // 候选阶段在非 required 闸门下完成即过，没有人来做 choice：
-    // 自动采用第 1 个方案复制为正式制品（chosen=1 留痕，可事后打回改选）。
+    // 自动采用第 1 个方案复制为正式制品（chosen=1 留痕）。
+    // 注意：auto 下打回会重跑该阶段并再次自动选 1；要改选方案须先把闸门
+    // PUT 回 required 再打回重跑，或编辑制品后带 choice 重新批准。
     if (stage.candidates > 1 && gate !== "required") {
       copyChoice(taskId, stage, 1);
       extra.chosen = 1;

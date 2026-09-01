@@ -16,7 +16,7 @@
 | D8 | 制品 schema | 沿用 `videos/_template/` 的文件格式（BRIEF/SCRIPT/STORYBOARD/audio_meta），校验复用 faceless-explainer 的 parser；管线脚本已 vendor 进 `tools/pipeline/`。 |
 | D9 | 闸门三态（2026-08-23） | gate 取值扩展为 `auto` / `required` / **`confirm`（启动前人工确认，完成后自动过）**。长耗时/耗配额的阶段先问再跑：`tts` / `frames` / `render` 默认 confirm。确认一次性消费——完成或打回后重跑需再次确认。任务级覆盖走 UI（`PUT /api/tasks/<id>/gates`），覆盖值同上三态。闸门值在阶段启动时定型：运行中改闸门不影响本次完成的落闸方式，只影响重跑。 |
 | D10 | 多方案候选（2026-08-23） | model 阶段可声明 `candidates: N`：**一次作业产出 N 份变体**到 `candidates/<stage>/<i>/`（路径结构与 outputs 相同），不直接写正式制品。人工在 UI 并排预览后批准其一，服务端把选中变体复制为正式制品；未选中的留档在 `candidates/` 供复盘。选「一次产出 N 份」而非「跑 N 次」：配额只花一份，差异由 prompt 保证。首期 `brief` 启用（`candidates: 3`）。 |
-| D11 | Agent 接入（2026-09-01） | 平台能力即 REST API，agent（kimi / codex）用 HTTP 即可驱动全程。仓库自带 `skill/`（驱动说明书），设置页可一键**注册**到全局 skill 目录（默认 `~/.agents/skills/video-studio/`，`STUDIO_SKILLS_DIR` 覆盖）、**更新**（SKILL.md 内容比对判定）、**卸载**。全自动模式：`POST /api/tasks` 带 `"gates":"auto"` 把所有阶段闸门改 auto 无人值守跑完；**候选阶段在 auto/confirm 闸门下完成即过时自动采用方案 1**（`chosen:1` 留痕，可打回改选）——否则没有人做 choice，正式制品不会被复制。不做 MCP 封装与鉴权（仅 loopback）。 |
+| D11 | Agent 接入（2026-09-01） | 平台能力即 REST API，agent（kimi / codex）用 HTTP 即可驱动全程。仓库自带 `skill/`（驱动说明书），设置页可一键**注册**到全局 skill 目录（默认 `~/.agents/skills/video-studio/`，`STUDIO_SKILLS_DIR` 覆盖）、**更新**（SKILL.md 内容比对判定）、**卸载**。全自动模式：`POST /api/tasks` 带 `"gates":"auto"` 把所有阶段闸门改 auto 无人值守跑完；**候选阶段在 auto/confirm 闸门下完成即过时自动采用方案 1**（`chosen:1` 留痕；改选需先把闸门 PUT 回 `required` 再打回重跑，或编辑制品后带 choice 重新批准——auto 下直接打回会重跑并再次自动选 1）——否则没有人做 choice，正式制品不会被复制。不做 MCP 封装与鉴权（仅 loopback）。 |
 
 ## 1. 定位与形态
 

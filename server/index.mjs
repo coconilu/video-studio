@@ -56,6 +56,17 @@ function readBody(req) {
   });
 }
 
+/** 读空/JSON body 并校验 content-type（用于不带参数的写端点）。 */
+async function readJsonBody(req) {
+  const ct = req.headers["content-type"] || "";
+  if (!ct.includes("application/json")) {
+    const e = new Error("content-type must be application/json");
+    e.clientError = true;
+    throw e;
+  }
+  await readBody(req); // 消费请求体，keep-alive 连接才能复用
+}
+
 /** 任务摘要：当前阶段 + 整体进度。 */
 function summarize(task) {
   let spec;
@@ -114,8 +125,16 @@ function listFilesRecursive(absBase, relBase) {
 const routes = [
   ["GET", /^\/api\/health$/, async (_req, res) => json(res, 200, { ok: true, mock: MOCK })],
   ["GET", /^\/api\/skill$/, async (_req, res) => json(res, 200, skillStatus())],
-  ["POST", /^\/api\/skill\/install$/, async (_req, res) => json(res, 200, installSkill())],
-  ["POST", /^\/api\/skill\/uninstall$/, async (_req, res) => json(res, 200, uninstallSkill())],
+  // 写操作要求 JSON content-type：浏览器 form 跨站 POST 进不来（隐式 CSRF 防护，
+  // 与其他改动类端点一致——它们的 JSON.parse 会挡掉 form 编码）。
+  ["POST", /^\/api\/skill\/install$/, async (req, res) => {
+    await readJsonBody(req);
+    json(res, 200, installSkill());
+  }],
+  ["POST", /^\/api\/skill\/uninstall$/, async (req, res) => {
+    await readJsonBody(req);
+    json(res, 200, uninstallSkill());
+  }],
   ["GET", /^\/api\/pipelines$/, async (_req, res) => json(res, 200, listSpecs())],
   ["GET", /^\/api\/tasks$/, async (_req, res) => {
     json(res, 200, listTasks().map((t) => ({ ...t, summary: summarize(t) })));

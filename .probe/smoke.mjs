@@ -201,6 +201,20 @@ try {
   const autoVideo = await api("GET", `/api/tasks/${aid}/file?path=${encodeURIComponent("renders/video.mp4")}`);
   check("auto pipeline produced video.mp4", autoVideo.status === 200);
 
+  console.log("smoke: gates 对象形式 + confirm 闸门下候选阶段也自动选 1");
+  const objTask = await api("POST", "/api/tasks", {
+    title: "对象闸门", pipeline: "concept-explainer", gates: { brief: "confirm", tts: "auto" },
+  });
+  check("object gates accepted", objTask.status === 201
+    && objTask.data.gates?.brief === "confirm" && objTask.data.gates?.tts === "auto",
+    JSON.stringify(objTask.data).slice(0, 200));
+  const oid = objTask.data.id;
+  await waitStage(oid, "brief", "confirm"); // confirm 闸门：启动前停下
+  await api("POST", `/api/tasks/${oid}/stages/brief/approve`); // 确认启动
+  const odetail = await waitStage(oid, "brief", "approved"); // confirm 完成即过
+  check("confirm gate auto-picks choice 1",
+    odetail.stageList.find((s) => s.id === "brief").chosen === 1);
+
   console.log(failures === 0 ? "\nSMOKE PASS" : `\nSMOKE FAIL (${failures})`);
   process.exitCode = failures === 0 ? 0 : 1;
 } catch (err) {
