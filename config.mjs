@@ -4,6 +4,7 @@
  */
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { existsSync, readdirSync } from "node:fs";
 import os from "node:os";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -42,13 +43,31 @@ export const PIPELINE_SCRIPTS =
 export const FFPROBE =
   process.env.STUDIO_FFPROBE || "ffprobe";
 
-/** hyperframes 自带 152 headless-shell 损坏，必须指向 Puppeteer 缓存的 150。 */
-export const CHROME_HEADLESS_SHELL =
-  process.env.HYPERFRAMES_BROWSER_PATH ||
-  join(
-    os.homedir(),
-    ".cache/puppeteer/chrome-headless-shell/win64-150.0.7871.24/chrome-headless-shell-win64/chrome-headless-shell.exe",
+/**
+ * hyperframes 自带 152 headless-shell 损坏，必须用 150。先取环境变量；
+ * 否则用 Puppeteer 缓存的默认路径，不存在则扫描缓存里任意 150.x 版本
+ * （换机/重装后小版本号会漂移）——运行时与 tools/doctor.mjs 自检共用此值，保持一致。
+ */
+function defaultChromeShell() {
+  const cache = join(os.homedir(), ".cache/puppeteer/chrome-headless-shell");
+  const winDefault = join(
+    cache,
+    "win64-150.0.7871.24/chrome-headless-shell-win64/chrome-headless-shell.exe",
   );
+  if (existsSync(winDefault)) return winDefault;
+  if (existsSync(cache)) {
+    for (const ver of readdirSync(cache)) {
+      if (!/-150\./.test(ver)) continue;
+      const win = join(cache, ver, "chrome-headless-shell-win64/chrome-headless-shell.exe");
+      if (existsSync(win)) return win;
+      const mac = join(cache, ver, "chrome-headless-shell-mac-arm64/chrome-headless-shell");
+      if (existsSync(mac)) return mac;
+    }
+  }
+  return winDefault; // 找不到也返回默认路径，doctor 按不存在报红灯
+}
+export const CHROME_HEADLESS_SHELL =
+  process.env.HYPERFRAMES_BROWSER_PATH || defaultChromeShell();
 
 /** media-hub 的 MCP stdio 服务端（与 ~/.kimi-code/mcp.json 注册的一致）。 */
 export const MEDIA_HUB_EXE =

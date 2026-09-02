@@ -884,6 +884,7 @@ async function runDoctorCheck({ gate = false } = {}) {
   try {
     result = await api("/api/doctor");
   } catch (e) {
+    // 刻意的 fail-open：自检接口本身挂掉只 toast，不挡用户进主界面
     toast(`环境自检失败：${e.message}`);
     return null;
   }

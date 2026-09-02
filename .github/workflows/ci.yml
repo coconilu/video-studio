@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Platform smoke (mock pipeline)
+        run: npm run smoke
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Check Tauri shell (cargo check)
+        run: cargo check --manifest-path desktop/src-tauri/Cargo.toml

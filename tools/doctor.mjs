@@ -3,7 +3,7 @@
  * 供 GET /api/doctor 与桌面壳启动面板使用；纯探测，不改任何状态。
  * @module tools/doctor
  */
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { delimiter, join } from "node:path";
 import os from "node:os";
 import {
@@ -27,21 +27,6 @@ function which(bin) {
       const p = join(dir, bin + (ext && !bin.toLowerCase().endsWith(ext.toLowerCase()) ? ext : ""));
       if (existsSync(p)) return p;
     }
-  }
-  return null;
-}
-
-/** 在 Puppeteer 缓存里找任意 chrome-headless-shell 150（config 指死了具体版本路径，换机可能不在）。 */
-function findChromeShell150() {
-  if (existsSync(CHROME_HEADLESS_SHELL)) return CHROME_HEADLESS_SHELL;
-  const cache = join(os.homedir(), ".cache/puppeteer/chrome-headless-shell");
-  if (!existsSync(cache)) return null;
-  for (const ver of readdirSync(cache)) {
-    if (!ver.includes("150")) continue;
-    const exe = join(cache, ver, "chrome-headless-shell-win64/chrome-headless-shell.exe");
-    if (existsSync(exe)) return exe;
-    const mac = join(cache, ver, "chrome-headless-shell-mac-arm64/chrome-headless-shell");
-    if (existsSync(mac)) return mac;
   }
   return null;
 }
@@ -78,13 +63,14 @@ export function runDoctor() {
     hint: ffprobe ? "" : "安装 ffmpeg 并加入 PATH，或设 STUDIO_FFPROBE 指向 ffprobe 完整路径。",
   });
 
-  const chrome = findChromeShell150();
+  // CHROME_HEADLESS_SHELL 在 config.mjs 里已做缓存扫描兜底，这里只验最终生效路径
+  const chromeOk = existsSync(CHROME_HEADLESS_SHELL);
   checks.push({
     id: "chrome",
     label: "chrome-headless-shell 150（渲染）",
-    ok: !!chrome,
-    detail: chrome || "未找到",
-    hint: chrome ? "" : "用 Puppeteer 安装 chrome-headless-shell 150（npx puppeteer browsers install chrome-headless-shell@150），或设 HYPERFRAMES_BROWSER_PATH 指向它。",
+    ok: chromeOk,
+    detail: chromeOk ? CHROME_HEADLESS_SHELL : "未找到",
+    hint: chromeOk ? "" : "用 Puppeteer 安装 chrome-headless-shell 150（npx puppeteer browsers install chrome-headless-shell@150），或设 HYPERFRAMES_BROWSER_PATH 指向它。",
   });
 
   const hub = existsSync(MEDIA_HUB_EXE);

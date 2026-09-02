@@ -11,12 +11,26 @@
   @keyframes pulse { 50% { opacity: 0.35; transform: scale(0.92); } }
   .msg { font-size: 13px; color: #9a948a; }
   .err { color: #e08a70; max-width: 420px; text-align: center; line-height: 1.7; display: none; }
+  .update { margin-top: 10px; padding: 12px 18px; border: 1px solid #3a3f47; border-radius: 10px;
+            background: #1c2027; font-size: 13px; text-align: center; }
+  .update-actions { margin-top: 10px; display: flex; gap: 10px; justify-content: center; }
+  .btn-primary { background: #cc785c; color: #14171c; border: 0; border-radius: 8px;
+                 padding: 6px 14px; cursor: pointer; font-weight: 600; }
+  .btn-ghost { background: transparent; color: #9a948a; border: 1px solid #3a3f47;
+               border-radius: 8px; padding: 6px 14px; cursor: pointer; }
 </style>
 </head>
 <body>
 <div class="mark">✱</div>
 <div class="msg" id="msg">平台服务启动中…</div>
 <div class="err" id="err"></div>
+<div class="update" id="update" hidden>
+  <div id="update-text"></div>
+  <div class="update-actions">
+    <button class="btn-primary" id="update-now">立即更新</button>
+    <button class="btn-ghost" id="update-skip">跳过</button>
+  </div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>
