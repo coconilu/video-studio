@@ -37,8 +37,9 @@ if (existsSync(target)) {
     const tgz = join(DEST_DIR, "node.tgz");
     console.log("下载", url);
     await download(url, tgz);
+    // BSD tar（macOS）要求选项在成员名之前，否则选项被当成员 pattern 报 Not found
     execFileSync("tar", ["-xzf", tgz, "-C", DEST_DIR,
-      `node-v${NODE_VERSION}-darwin-arm64/bin/node`, "--strip-components=2"]);
+      "--strip-components=2", `node-v${NODE_VERSION}-darwin-arm64/bin/node`]);
     rmSync(tgz); // 别把 45MB 的 tar 包打进 DMG
     chmodSync(target, 0o755);
   } else {
