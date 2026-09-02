@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "默认权限集：仅核心 API（壳无 updater 等插件）",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

@@ -730,6 +730,9 @@ function bindEvents() {
       case "close-settings": $("#settings-modal").hidden = true; break;
       case "skill-install": run(() => doSkillInstall()); break;
       case "skill-uninstall": run(() => doSkillUninstall()); break;
+      case "doctor-recheck": run(() => runDoctorCheck()); break;
+      case "doctor-open": run(() => runDoctorCheck()); break;
+      case "doctor-dismiss": $("#doctor-modal").hidden = true; break;
       default: break;
     }
   });
@@ -765,7 +768,7 @@ function bindEvents() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { $("#new-modal").hidden = true; $("#settings-modal").hidden = true; }
+    if (e.key === "Escape") { $("#new-modal").hidden = true; $("#settings-modal").hidden = true; $("#doctor-modal").hidden = true; }
   });
 
   $("#new-modal").addEventListener("click", (e) => {
@@ -773,6 +776,10 @@ function bindEvents() {
   });
 
   $("#settings-modal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+  });
+
+  $("#doctor-modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) e.currentTarget.hidden = true;
   });
 
@@ -843,6 +850,10 @@ function renderSettings(skill) {
       <div class="skill-row"><span class="skill-key mono">状态</span><span>${statusText}</span></div>
       <div class="skill-row"><span class="skill-key mono">安装位置</span><span class="mono skill-path" title="${esc(skill.destDir)}">${esc(skill.destDir)}</span></div>
       <div class="row-actions skill-actions">${actionBtn}</div>
+    </div>
+    <p class="modal-sub" style="margin-top:16px">环境自检：流水线依赖的外部组件（Node / kimi cli / ffprobe / chrome-headless-shell / media-hub）。</p>
+    <div class="row-actions skill-actions">
+      <button class="btn btn-ghost" data-action="doctor-open">运行环境自检</button>
     </div>`;
 }
 
@@ -856,6 +867,30 @@ async function doSkillUninstall() {
   const r = await api("/api/skill/uninstall", { method: "POST", json: {} });
   renderSettings(r);
   toast("skill 已卸载", "info");
+}
+
+/* ---------- 环境自检（启动闸门 + 设置页入口） ---------- */
+function doctorBodyHtml(result) {
+  return result.checks.map((c) => `<div class="skill-row doctor-row">
+    <span class="doctor-dot ${c.ok ? "doctor-ok" : "doctor-bad"}">${c.ok ? "✓" : "✗"}</span>
+    <span class="doctor-label">${esc(c.label)}</span>
+    <span class="mono skill-path" title="${esc(c.detail)}">${esc(c.detail)}</span>
+    ${c.ok ? "" : `<div class="doctor-hint">${esc(c.hint)}</div>`}
+  </div>`).join("");
+}
+
+async function runDoctorCheck({ gate = false } = {}) {
+  let result;
+  try {
+    result = await api("/api/doctor");
+  } catch (e) {
+    toast(`环境自检失败：${e.message}`);
+    return null;
+  }
+  $("#doctor-body").innerHTML = doctorBodyHtml(result);
+  // gate 模式（启动时）：全绿不打扰；有红灯才弹面板
+  $("#doctor-modal").hidden = gate && result.ok;
+  return result;
 }
 
 /* ---------- 轮询：2s 一拍；失焦暂停；仅在需要时发请求 ---------- */
@@ -890,6 +925,8 @@ async function boot() {
   } catch (e) {
     toast(`后端不可达：${e.message}`);
   }
+  // 启动闸门：环境自检有红灯时先弹面板（MOCK 模式不挡，冒烟/演示无需真实依赖）
+  if (!(state.health && state.health.mock)) await runDoctorCheck({ gate: true });
   try {
     state.pipelines = await api("/api/pipelines");
   } catch (e) {

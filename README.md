@@ -27,6 +27,19 @@ npm start          # http://127.0.0.1:4173
 
 在网页里「＋ 新建任务」，输入想法或参考材料（文本 / URL），流水线自动推进到第一个闸门。
 
+### 桌面版（双击启动）
+
+`desktop/` 是 Tauri 壳：内嵌 Node sidecar 跑平台 server，窗口加载 `http://127.0.0.1:<port>`，无需开终端：
+
+```bash
+cd desktop
+npm install
+npm run dev        # 开发模式（用系统 Node + 仓库代码，改即生效）
+npm run build      # 出 NSIS/DMG 安装包（自动内嵌 Node 运行时与平台代码）
+```
+
+安装后双击 App：启动页等平台就绪 → 环境自检面板（Node / kimi cli / ffprobe / chrome-headless-shell / media-hub 逐项 ✓/✗ 与修复指引）→ 全绿进入任务界面。浏览器访问时同样有自检闸门（设置页可随时重跑）。
+
 ## 环境前置
 
 - Node ≥ 22
@@ -75,10 +88,11 @@ curl -X POST http://127.0.0.1:4173/api/tasks -H 'content-type: application/json'
 ## 仓库结构
 
 ```
-server/      HTTP 服务（API + 静态 UI）
+server/      HTTP 服务（API + 静态 UI；含 GET /api/doctor 环境自检）
 core/        引擎 / 任务存储 / 队列 / 制品校验 / spec 加载
 runners/     模型 Runner（kimi-cli、mock）
-tools/       确定性步骤：tts、steps（assemble/check/render）、pipeline/（vendored 管线脚本）
+tools/       确定性步骤：tts、steps（assemble/check/render）、doctor（依赖自检）、pipeline/（vendored 管线脚本）
+desktop/     Tauri 桌面壳（自包含；内嵌 Node sidecar + 启动页，见「快速开始 · 桌面版」）
 pipelines/   流水线 spec（JSON，声明阶段/类型/输入输出/闸门/自愈）
 prompts/     各模型阶段的 prompt 模板
 skill/       agent 驱动说明书（SKILL.md，可注册到全局 skill 目录，见「Agent 接入」）
@@ -88,4 +102,4 @@ videos/      任务目录：_template/（新任务骨架）、model-as-plugin/�
 
 ## 路线图
 
-二期：Tauri 桌面壳（DESIGN.md D2）、codex cli Runner、真实录屏 pipeline（computer-use）、B 站自动发布（web-bridge）、BGM、9:16 竖屏。
+二期：Tauri 自动更新与发布流水线（壳已落地，见 D2）、codex cli Runner、真实录屏 pipeline（computer-use）、B 站自动发布（web-bridge）、BGM、9:16 竖屏。

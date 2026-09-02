@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Video Studio 启动中…</title>
+<style>
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; align-items: center;
+         justify-content: center; gap: 14px; background: #14171c; color: #e8e4de;
+         font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
+  .mark { font-size: 42px; color: #cc785c; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; transform: scale(0.92); } }
+  .msg { font-size: 13px; color: #9a948a; }
+  .err { color: #e08a70; max-width: 420px; text-align: center; line-height: 1.7; display: none; }
+</style>
+</head>
+<body>
+<div class="mark">✱</div>
+<div class="msg" id="msg">平台服务启动中…</div>
+<div class="err" id="err"></div>
+<script src="app.js"></script>
+</body>
+</html>
