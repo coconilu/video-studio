@@ -26,5 +26,9 @@ jobs:
       - name: Install desktop dependencies
         run: npm ci --prefix desktop
 
+      # resources/node 与 resources/platform 不进 git（gitignore），cargo check 前必须先填充
+      - name: Bundle platform code & Node runtime
+        run: npm run bundle --prefix desktop
+
       - name: Check Tauri shell (cargo check)
         run: cargo check --manifest-path desktop/src-tauri/Cargo.toml
