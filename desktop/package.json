@@ -1,6 +1,6 @@
 {
   "name": "video-studio-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Video Studio 桌面壳：内嵌 Node sidecar 跑平台 server，webview 加载 127.0.0.1",
