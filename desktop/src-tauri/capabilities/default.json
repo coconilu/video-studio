@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "默认权限集：核心 API + updater 检查与下载安装",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "updater:allow-check",
+    "updater:allow-download-and-install"
+  ]
+}

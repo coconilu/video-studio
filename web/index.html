@@ -68,6 +68,18 @@
   </div>
 </div>
 
+<div class="modal-veil" id="doctor-modal" hidden>
+  <div class="modal">
+    <h2 class="modal-title">环境自检</h2>
+    <p class="modal-sub">流水线依赖下列外部组件。有红灯时对应阶段会失败，建议先按指引修复。</p>
+    <div id="doctor-body"></div>
+    <div class="row-actions modal-actions">
+      <button type="button" class="btn btn-primary" data-action="doctor-recheck">重新检测</button>
+      <button type="button" class="btn btn-ghost" data-action="doctor-dismiss">仍要进入</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js" defer></script>
 </body>
 </html>

@@ -62,6 +62,12 @@ try {
   check("health", health.data.ok === true && health.data.mock === true);
   const pipes = await api("GET", "/api/pipelines");
   check("pipelines", pipes.data.some((p) => p.id === "concept-explainer"));
+  const doctor = await api("GET", "/api/doctor");
+  check("doctor returns checks", doctor.status === 200
+    && Array.isArray(doctor.data.checks) && doctor.data.checks.length >= 5
+    && doctor.data.checks.every((c) => "ok" in c && "label" in c && "hint" in c)
+    && doctor.data.checks.find((c) => c.id === "node")?.ok === true,
+    JSON.stringify(doctor.data).slice(0, 200));
 
   console.log("smoke: skill 注册 / 更新 / 卸载（设置页 API）");
   let skill = await api("GET", "/api/skill");

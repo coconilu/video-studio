@@ -13,6 +13,7 @@ import { createTask, forkTask, listTasks, readTask } from "../core/tasks.mjs";
 import { readArtifact, safePath, writeArtifact } from "../core/artifacts.mjs";
 import { advance, approve, onArtifactEdited, reject, setGateOverride } from "../core/engine.mjs";
 import { installSkill, skillStatus, uninstallSkill } from "../core/skill.mjs";
+import { runDoctor } from "../tools/doctor.mjs";
 
 const PORT = Number(process.env.STUDIO_PORT || 4173);
 const WEB_DIR = join(PLATFORM_DIR, "web");
@@ -124,6 +125,7 @@ function listFilesRecursive(absBase, relBase) {
 /** API 路由表：[method, pattern(正则, 捕获组进 params), handler]。 */
 const routes = [
   ["GET", /^\/api\/health$/, async (_req, res) => json(res, 200, { ok: true, mock: MOCK })],
+  ["GET", /^\/api\/doctor$/, async (_req, res) => json(res, 200, runDoctor())],
   ["GET", /^\/api\/skill$/, async (_req, res) => json(res, 200, skillStatus())],
   // 写操作要求 JSON content-type：浏览器 form 跨站 POST 进不来（隐式 CSRF 防护，
   // 与其他改动类端点一致——它们的 JSON.parse 会挡掉 form 编码）。
