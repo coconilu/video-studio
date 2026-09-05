@@ -29,6 +29,11 @@
       "app",
       "dmg"
     ],
+    "windows": {
+      "nsis": {
+        "installerHooks": "./installer-hooks.nsh"
+      }
+    },
     "resources": [
       "resources/README.txt",
       "resources/node/",
