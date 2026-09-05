@@ -14,7 +14,7 @@
 - 严格确定性：禁止 `Date.now()`、`Math.random()`、网络请求。
 - 动画时序严格按分镜表 Scene 窗口；VO 节拍揭示是铁律；hold 阶段只允许极轻微浮动。
 - JS 恢复元素可见性时用显式 `el.style.display = "inline"`（或 "block"），**绝不赋 `""`**——样式表的 `display:none` 会回落生效。
-- 视觉遵循 frame.md：cream/ink/coral 三色纪律（coral 每帧至多一处）、暖 navy 只给代码 surface、字体按预设（中文 display 用 Noto Serif SC、body 用 Noto Sans SC、code 用等宽）。
+- 视觉严格遵循本任务的 frame.md：配色、字体、组件的全部约束与 negative list 都必须遵守，不引入 frame.md 之外的配色与字体。
 - 内容保持在顶部 83% 安全区内。
 
 逐帧写完所有文件后，**把 STORYBOARD.md 里已完成帧的 `status: outline` 改为 `status: animated`**（组装的挂载语义：只有 built/animated 帧会被挂载，且此时 src 必须已在磁盘上）。全部翻完后回复 done。
